@@ -8,6 +8,14 @@ document.getElementById("serviceForm").addEventListener("submit", function (e) {
   const serviceType = document.getElementById("serviceType").value;
   const message = document.getElementById("message").value.trim();
 
+  db.ref("serviceRequests").push({
+    name,
+    email,
+    serviceType,
+    message,
+    timestamp: new Date().toISOString()
+  });
+
   const requestRef = db.ref("serviceRequests").push();
   requestRef.set({
     name,
