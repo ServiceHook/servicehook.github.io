@@ -119,7 +119,7 @@
           if (error) {
             updateResultBox("❌ Failed to save. Try again.", false);
           } else {
-            const shortUrl = `${location.origin}/file/?alias=${alias}`;
+            const shortUrl = `${location.origin}/?alias=${alias}`;
             updateResultBox(`
               <div class="og-card">
                 <img src="https://api.apiflash.com/v1/urltoimage?access_key=b0e5bc53bdf0417eb10f041ec400ebaf&url=${encodeURIComponent(shortUrl)}" alt="Preview of ${shortUrl}" />
