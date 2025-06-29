@@ -1,8 +1,9 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Show Ads - Telegram Mini App</title>
+  <meta charset="UTF-8" />
+  <title>Watch Ads – Get Reward</title>
+  <script src="//libtl.com/sdk.js" data-zone="9505085" data-sdk="show_9505085"></script>
   <style>
     * {
       margin: 0;
@@ -15,13 +16,29 @@
       height: 100vh;
       background: linear-gradient(135deg, #d6ffb7, #b9fbc0);
       display: flex;
+      flex-direction: column;
       align-items: center;
       justify-content: center;
+      gap: 20px;
     }
 
-    .show-btn {
-      padding: 18px 36px;
-      font-size: 20px;
+    h1 {
+      font-size: 24px;
+      color: #2e7d32;
+    }
+
+    .coin-counter {
+      font-size: 18px;
+      background: #ffffffaa;
+      padding: 10px 20px;
+      border-radius: 8px;
+      color: #2e7d32;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+    }
+
+    .btn {
+      padding: 16px 32px;
+      font-size: 18px;
       font-weight: 600;
       color: white;
       background: linear-gradient(to right, #3db36b, #8bc34a);
@@ -32,17 +49,48 @@
       transition: all 0.3s ease;
     }
 
-    .show-btn:hover {
+    .btn:hover {
       transform: scale(1.05);
       box-shadow: 0 15px 25px rgba(0,0,0,0.2);
+    }
+
+    .note {
+      font-size: 14px;
+      color: #555;
     }
   </style>
 </head>
 <body>
 
-  <button class="show-btn" onclick="window.location.href='https://t.me/your_montag_ad_bot'">
-    Show Ads
-  </button>
+  <h1>🎁 Watch Ads & Earn Coins</h1>
+  <div class="coin-counter">Coins: <span id="coinCount">0</span></div>
+
+  <button class="btn" onclick="showAds()">Show Ads</button>
+  <button class="btn" onclick="redeem()">Redeem Coins</button>
+
+  <p class="note">+10 Coins per ad view</p>
+
+  <script>
+    // Initialize or load coins
+    let coins = localStorage.getItem('coins') || 0;
+    document.getElementById('coinCount').textContent = coins;
+
+    function showAds() {
+      show_9505085().then(() => {
+        // Reward user
+        coins = parseInt(coins) + 10;
+        localStorage.setItem('coins', coins);
+        document.getElementById('coinCount').textContent = coins;
+        alert(`You earned 10 coins!`);
+      }).catch((err) => {
+        console.error('Ad failed or skipped:', err);
+      });
+    }
+
+    function redeem() {
+      alert('🚧 Redeem feature coming soon!');
+    }
+  </script>
 
 </body>
 </html>
