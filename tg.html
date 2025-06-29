@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Show Ads - Telegram Mini App</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    body {
+      height: 100vh;
+      background: linear-gradient(135deg, #d6ffb7, #b9fbc0);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .show-btn {
+      padding: 18px 36px;
+      font-size: 20px;
+      font-weight: 600;
+      color: white;
+      background: linear-gradient(to right, #3db36b, #8bc34a);
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+      box-shadow: 0 10px 20px rgba(0,0,0,0.15);
+      transition: all 0.3s ease;
+    }
+
+    .show-btn:hover {
+      transform: scale(1.05);
+      box-shadow: 0 15px 25px rgba(0,0,0,0.2);
+    }
+  </style>
+</head>
+<body>
+
+  <button class="show-btn" onclick="window.location.href='https://t.me/your_montag_ad_bot'">
+    Show Ads
+  </button>
+
+</body>
+</html>
