@@ -3,7 +3,6 @@
 <head>
   <meta charset="UTF-8" />
   <title>Watch Ads – Get Reward</title>
-  <script src="//libtl.com/sdk.js" data-zone="9505085" data-sdk="show_9505085"></script>
   <style>
     * {
       margin: 0; padding: 0;
@@ -94,6 +93,7 @@
     const showAdsBtn = document.getElementById("showAdsBtn");
     const redeemSection = document.getElementById("redeemSection");
 
+    // Auth & load user
     onAuthStateChanged(auth, async (user) => {
       if (user) {
         userID = user.uid;
@@ -101,10 +101,11 @@
         const docSnap = await getDoc(userRef);
         if (docSnap.exists()) {
           coins = docSnap.data().coins || 0;
-          coinDisplay.textContent = coins;
         } else {
           await setDoc(userRef, { coins: 0, adViews: 0, lastAdTime: null });
+          coins = 0;
         }
+        coinDisplay.textContent = coins;
         renderRedeemSection();
       }
     });
@@ -120,14 +121,15 @@
       const now = new Date();
 
       if (lastAdTime && (now - lastAdTime) < 15000) {
-        alert("⏳ Wait 15 seconds before watching next ad.");
+        alert("⏳ Wait 15 seconds before watching the next ad.");
         showAdsBtn.disabled = false;
         return;
       }
 
       try {
-        if (typeof show_9505085 === 'function') {
-          await show_9505085("pop");
+        // Check if ad function exists
+        if (typeof window.show_9505085 === "function") {
+          await window.show_9505085("pop");
           coins += 10;
           coinDisplay.textContent = coins;
 
@@ -138,25 +140,24 @@
           });
 
           alert("🎉 You earned 10 coins!");
-          renderRedeemSection();
         } else {
-          alert("⚠️ Ad service not available. Try again later.");
+          alert("⚠️ Ads not loaded yet. Please refresh or try again later.");
         }
       } catch (err) {
-        console.error("Ad skipped or failed:", err);
+        console.error("Ad error:", err);
         alert("⚠️ Ad failed. Try again.");
       }
 
+      renderRedeemSection();
       setTimeout(() => showAdsBtn.disabled = false, 15000);
     }
 
     function renderRedeemSection() {
       const rupees = (coins * 0.5).toFixed(2);
-      redeemSection.innerHTML = `
-        <p>💰 You can redeem ₹${rupees}</p>
-        <input type="text" id="upi" placeholder="Enter your UPI ID" /><br/><br/>
-        <button class="btn" onclick="sendToTelegram()">Request Redeem</button>
-      `;
+      let redeemHTML = `<p>💰 Coins: ${coins} → ₹${rupees}</p>`;
+      redeemHTML += `<input type="text" id="upi" placeholder="Enter your UPI ID" /><br/><br/>`;
+      redeemHTML += `<button class="btn" onclick="sendToTelegram()">Request Redeem</button>`;
+      redeemSection.innerHTML = redeemHTML;
     }
 
     window.sendToTelegram = () => {
@@ -167,12 +168,12 @@
 
       const upi = document.getElementById("upi").value.trim();
       if (!upi || !upi.includes("@")) {
-        alert("⚠️ Please enter a valid UPI ID.");
+        alert("⚠️ Enter a valid UPI ID.");
         return;
       }
 
-      const message = encodeURIComponent(`🤑 New Redeem Request:\n\n🧾 UID: ${userID}\n💰 Coins: ${coins}\n💸 ₹${(coins * 0.5).toFixed(2)}\n🏦 UPI: ${upi}`);
-      window.location.href = `https://t.me/YOURUSERNAME?text=${message}`;
+      const msg = encodeURIComponent(`🤑 New Redeem Request:\n\n🧾 UID: ${userID}\n💰 Coins: ${coins}\n💸 ₹${(coins * 0.5).toFixed(2)}\n🏦 UPI: ${upi}`);
+      window.location.href = `https://t.me/YOURUSERNAME?text=${msg}`;
     };
   </script>
 </body>
