@@ -76,7 +76,7 @@
     document.getElementById('coinCount').textContent = coins;
 
     function showAds() {
-      show_9505085().then(() => {
+      show_9505085('pop').then(() => {
         // Reward user
         coins = parseInt(coins) + 10;
         localStorage.setItem('coins', coins);
