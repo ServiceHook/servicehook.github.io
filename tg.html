@@ -101,10 +101,10 @@
         if (docSnap.exists()) {
           coins = docSnap.data().coins || 0;
           coinDisplay.textContent = coins;
-          renderRedeemSection();
         } else {
           await setDoc(userRef, { coins: 0, adViews: 0, lastAdTime: null });
         }
+        renderRedeemSection();
       }
     });
 
@@ -125,18 +125,22 @@
       }
 
       try {
-        await show_9505085("pop");
-        coins += 10;
-        coinDisplay.textContent = coins;
+        if (typeof show_9505085 === 'function') {
+          await show_9505085("pop");
+          coins += 10;
+          coinDisplay.textContent = coins;
 
-        await updateDoc(userRef, {
-          coins: coins,
-          adViews: (userSnap.data().adViews || 0) + 1,
-          lastAdTime: serverTimestamp()
-        });
+          await updateDoc(userRef, {
+            coins: coins,
+            adViews: (userSnap.data().adViews || 0) + 1,
+            lastAdTime: serverTimestamp()
+          });
 
-        renderRedeemSection();
-        alert("🎉 You earned 10 coins!");
+          alert("🎉 You earned 10 coins!");
+          renderRedeemSection();
+        } else {
+          alert("⚠️ Ad service not available. Try again later.");
+        }
       } catch (err) {
         console.error("Ad skipped or failed:", err);
         alert("⚠️ Ad failed. Try again.");
@@ -146,20 +150,20 @@
     }
 
     function renderRedeemSection() {
-      if (coins < 2599) {
-        redeemSection.innerHTML = `<p class="note">🔒 You need at least 2599 coins to redeem (1 coin = ₹0.5)</p>`;
-        return;
-      }
-
       const rupees = (coins * 0.5).toFixed(2);
       redeemSection.innerHTML = `
-        <p>You can redeem ₹${rupees}</p>
+        <p>💰 You can redeem ₹${rupees}</p>
         <input type="text" id="upi" placeholder="Enter your UPI ID" /><br/><br/>
         <button class="btn" onclick="sendToTelegram()">Request Redeem</button>
       `;
     }
 
     window.sendToTelegram = () => {
+      if (coins < 2599) {
+        alert("🚫 You need at least 2599 coins to redeem.");
+        return;
+      }
+
       const upi = document.getElementById("upi").value.trim();
       if (!upi || !upi.includes("@")) {
         alert("⚠️ Please enter a valid UPI ID.");
@@ -167,8 +171,7 @@
       }
 
       const message = encodeURIComponent(`🤑 New Redeem Request:\n\n🧾 UID: ${userID}\n💰 Coins: ${coins}\n💸 ₹${(coins * 0.5).toFixed(2)}\n🏦 UPI: ${upi}`);
-      // Replace "YOURUSERNAME" with your real Telegram username (without @)
-      window.location.href = `https://t.me/Djexohere?text=${message}`;
+      window.location.href = `https://t.me/YOURUSERNAME?text=${message}`;
     };
   </script>
 </body>
