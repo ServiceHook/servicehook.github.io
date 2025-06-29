@@ -3,15 +3,12 @@
 <head>
   <meta charset="UTF-8" />
   <title>Watch Ads – Get Reward</title>
-  <script src='//libtl.com/sdk.js' data-zone='9505085' data-sdk='show_9505085'></script>
   <style>
     * {
-      margin: 0;
-      padding: 0;
+      margin: 0; padding: 0;
       box-sizing: border-box;
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     }
-
     body {
       height: 100vh;
       background: linear-gradient(135deg, #d6ffb7, #b9fbc0);
@@ -20,13 +17,9 @@
       align-items: center;
       justify-content: center;
       gap: 20px;
+      text-align: center;
     }
-
-    h1 {
-      font-size: 24px;
-      color: #2e7d32;
-    }
-
+    h1 { font-size: 24px; color: #2e7d32; }
     .coin-counter {
       font-size: 18px;
       background: #ffffffaa;
@@ -35,9 +28,8 @@
       color: #2e7d32;
       box-shadow: 0 2px 6px rgba(0,0,0,0.2);
     }
-
     .btn {
-      padding: 16px 32px;
+      padding: 14px 28px;
       font-size: 18px;
       font-weight: 600;
       color: white;
@@ -46,17 +38,22 @@
       border-radius: 12px;
       cursor: pointer;
       box-shadow: 0 10px 20px rgba(0,0,0,0.15);
-      transition: all 0.3s ease;
+      transition: 0.3s ease;
     }
-
+    .btn:disabled {
+      background: #9e9e9e;
+      cursor: not-allowed;
+    }
     .btn:hover {
       transform: scale(1.05);
       box-shadow: 0 15px 25px rgba(0,0,0,0.2);
     }
-
-    .note {
-      font-size: 14px;
-      color: #555;
+    .note { font-size: 14px; color: #555; }
+    input {
+      padding: 10px;
+      width: 220px;
+      border-radius: 8px;
+      border: 1px solid #ccc;
     }
   </style>
 </head>
@@ -65,32 +62,114 @@
   <h1>🎁 Watch Ads & Earn Coins</h1>
   <div class="coin-counter">Coins: <span id="coinCount">0</span></div>
 
-  <button class="btn" onclick="showAds()">Show Ads</button>
-  <button class="btn" onclick="redeem()">Redeem Coins</button>
+  <button class="btn" id="showAdsBtn" onclick="showAds()">Show Ads</button>
+  <div id="redeemSection"></div>
+  <p class="note">+10 Coins per ad view • ⏳ 15s cooldown</p>
 
-  <p class="note">+10 Coins per ad view</p>
+  <script src="//libtl.com/sdk.js" data-zone="9505085" data-sdk="show_9505085"></script>
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-app.js";
+    import { getFirestore, doc, getDoc, setDoc, updateDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-firestore.js";
+    import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-auth.js";
 
-  <script>
-    // Initialize or load coins
-    let coins = localStorage.getItem('coins') || 0;
-    document.getElementById('coinCount').textContent = coins;
+    const firebaseConfig = {
+      apiKey: "AIzaSyBbdPd2-4iXaAGR3SQ1P8ZAm_c65ur5Sag",
+      authDomain: "adsbot-8a4ce.firebaseapp.com",
+      projectId: "adsbot-8a4ce",
+      storageBucket: "adsbot-8a4ce.appspot.com",
+      messagingSenderId: "984319158092",
+      appId: "1:984319158092:web:6898c61b7cdb1efdaad1e9",
+      measurementId: "G-PLB9L2NPCV"
+    };
 
-    function showAds() {
-      show_9505085('pop').then(() => {
-        // Reward user
-        coins = parseInt(coins) + 10;
-        localStorage.setItem('coins', coins);
-        document.getElementById('coinCount').textContent = coins;
-        alert(`You earned 10 coins!`);
-      }).catch((err) => {
-        console.error('Ad failed or skipped:', err);
-      });
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const auth = getAuth(app);
+
+    let userID = null;
+    let coins = 0;
+
+    const coinDisplay = document.getElementById("coinCount");
+    const showAdsBtn = document.getElementById("showAdsBtn");
+    const redeemSection = document.getElementById("redeemSection");
+
+    onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        userID = user.uid;
+        const userRef = doc(db, "users", userID);
+        const docSnap = await getDoc(userRef);
+        if (docSnap.exists()) {
+          coins = docSnap.data().coins || 0;
+          coinDisplay.textContent = coins;
+          renderRedeemSection();
+        } else {
+          await setDoc(userRef, { coins: 0, adViews: 0, lastAdTime: null });
+        }
+      }
+    });
+
+    signInAnonymously(auth).catch(console.error);
+
+    async function showAds() {
+      showAdsBtn.disabled = true;
+
+      const userRef = doc(db, "users", userID);
+      const userSnap = await getDoc(userRef);
+      const lastAdTime = userSnap.data().lastAdTime?.toDate();
+      const now = new Date();
+
+      if (lastAdTime && (now - lastAdTime) < 15000) {
+        alert("⏳ Wait 15 seconds before watching next ad.");
+        showAdsBtn.disabled = false;
+        return;
+      }
+
+      try {
+        await show_9505085("pop");
+        coins += 10;
+        coinDisplay.textContent = coins;
+
+        await updateDoc(userRef, {
+          coins: coins,
+          adViews: (userSnap.data().adViews || 0) + 1,
+          lastAdTime: serverTimestamp()
+        });
+
+        renderRedeemSection();
+        alert("🎉 You earned 10 coins!");
+      } catch (err) {
+        console.error("Ad skipped or failed:", err);
+        alert("⚠️ Ad failed. Try again.");
+      }
+
+      setTimeout(() => showAdsBtn.disabled = false, 15000);
     }
 
-    function redeem() {
-      alert('🚧 Redeem feature coming soon!');
+    function renderRedeemSection() {
+      if (coins < 2599) {
+        redeemSection.innerHTML = `<p class="note">🔒 You need at least 2599 coins to redeem (1 coin = ₹0.5)</p>`;
+        return;
+      }
+
+      const rupees = (coins * 0.5).toFixed(2);
+      redeemSection.innerHTML = `
+        <p>You can redeem ₹${rupees}</p>
+        <input type="text" id="upi" placeholder="Enter your UPI ID" /><br/><br/>
+        <button class="btn" onclick="sendToTelegram()">Request Redeem</button>
+      `;
     }
+
+    window.sendToTelegram = () => {
+      const upi = document.getElementById("upi").value.trim();
+      if (!upi || !upi.includes("@")) {
+        alert("⚠️ Please enter a valid UPI ID.");
+        return;
+      }
+
+      const message = encodeURIComponent(`🤑 New Redeem Request:\n\n🧾 UID: ${userID}\n💰 Coins: ${coins}\n💸 ₹${(coins * 0.5).toFixed(2)}\n🏦 UPI: ${upi}`);
+      // Replace "YOURUSERNAME" with your real Telegram username (without @)
+      window.location.href = `https://t.me/Djexohere?text=${message}`;
+    };
   </script>
-
 </body>
 </html>
