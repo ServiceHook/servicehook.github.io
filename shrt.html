@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>FutrEngine Shortener 2.0</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/file/styles.css">
+  <script src="https://fpyf8.com/88/tag.min.js" data-zone="153280" async data-cfasync="false"></script>
+  <meta name="monetag" content="b19f6e9f443e4e2f86096afd4e0ad877">
+</head>
+<body>
+  <div class="main-container">
+    <h1 class="title">🔗 FutrEngine URL Shortener v2</h1>
+
+    <div class="shortener-box glass">
+      <input type="url" id="longUrl" placeholder="Paste your long URL" class="input" />
+      <input type="text" id="customAlias" placeholder="Custom alias (e.g. mylink)" class="input" />
+      <input type="password" id="linkPassword" placeholder="Password (optional)" class="input" />
+      
+      <div class="expiry-wrapper">
+        <select id="expiry" class="input" onchange="handleExpiryChange()">
+  <option value="none">No Limit</option>
+  <option value="1h">1 Hour</option>
+  <option value="1d">1 Day</option>
+  <option value="7d">7 Days</option>
+  <option value="custom">Custom</option>
+</select>
+
+<input type="datetime-local" id="customExpiry" class="input" placeholder="Custom Expiry" style="display: none;" />
+
+      </div>
+
+      <button onclick="shorten()" class="button pulse">✨ Create Short Link</button>
+    </div>
+
+    <div id="result" class="result-box"></div>
+  </div>
+
+  <!-- Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+
+  <script src="/file/script.js"></script>
+  <div id="loader" class="loader-overlay" style="display: none;">
+  <div class="spinner"></div>
+</div>
+
+  <div id="loader" style="display:none; justify-content:center; align-items:center; position:fixed; inset:0; background:rgba(255,255,255,0.6); z-index:9999;">
+  <div class="dual-ring"></div>
+</div>
+<style>
+.dual-ring {
+  width: 60px;
+  height: 60px;
+  border: 6px solid transparent;
+  border-top: 6px solid #3b82f6;
+  border-bottom: 6px solid #8b5cf6;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+</style>
+
+</body>
+</html>
