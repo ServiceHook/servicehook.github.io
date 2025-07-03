@@ -12,19 +12,21 @@ firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 const auth = firebase.auth();
 
-// === Auth UI Logic ===
-let mode = "login"; // or "signup"
+let mode = "login"; // ✅ FIXED - declared at top before usage
 
+// === Auth UI Logic ===
 function showLogin() {
   mode = "login";
   document.getElementById("authTitle").textContent = "Login";
   document.getElementById("authModal").style.display = "flex";
 }
+
 function showSignup() {
   mode = "signup";
   document.getElementById("authTitle").textContent = "Sign Up";
   document.getElementById("authModal").style.display = "flex";
 }
+
 function closeModal() {
   document.getElementById("authModal").style.display = "none";
 }
@@ -32,10 +34,15 @@ function closeModal() {
 function submitAuth() {
   const email = document.getElementById("authEmail").value;
   const pass = document.getElementById("authPassword").value;
+
   if (mode === "login") {
-    auth.signInWithEmailAndPassword(email, pass).then(closeModal).catch(e => alert(e.message));
+    auth.signInWithEmailAndPassword(email, pass)
+      .then(closeModal)
+      .catch(e => alert(e.message));
   } else {
-    auth.createUserWithEmailAndPassword(email, pass).then(closeModal).catch(e => alert(e.message));
+    auth.createUserWithEmailAndPassword(email, pass)
+      .then(closeModal)
+      .catch(e => alert(e.message));
   }
 }
 
@@ -43,6 +50,7 @@ auth.onAuthStateChanged(user => {
   const emailSpan = document.getElementById("userEmail");
   const authButtons = document.getElementById("authButtons");
   const userActions = document.getElementById("userActions");
+
   if (user) {
     emailSpan.textContent = `👤 ${user.email}`;
     authButtons.style.display = "none";
@@ -58,7 +66,7 @@ function logout() {
   auth.signOut();
 }
 
-// === URL Shortener with User Ownership ===
+// === Shorten URL ===
 function shorten() {
   const user = auth.currentUser;
   let longUrl = document.getElementById("longUrl").value.trim();
@@ -73,7 +81,10 @@ function shorten() {
 
   if (!longUrl.startsWith("http")) longUrl = "https://" + longUrl;
   if (!isValidUrl(longUrl)) return updateResultBox("❌ Invalid URL", false);
-  if (!alias) alias = "link" + Math.floor(1000 + Math.random() * 9000);
+  if (!alias) {
+    alias = "link" + Math.floor(1000 + Math.random() * 9000);
+    document.getElementById("customAlias").value = alias;
+  }
   if (!alias.match(/^[a-zA-Z0-9_-]+$/)) return updateResultBox("❌ Invalid alias", false);
 
   const ref = db.ref("links/" + alias);
@@ -122,7 +133,7 @@ function shorten() {
   });
 }
 
-// === My Links Loader ===
+// === Load My Links ===
 function loadMyLinks() {
   const user = auth.currentUser;
   if (!user) return alert("Login to view your links");
@@ -168,12 +179,13 @@ function getExpiryTimestamp(option, custom) {
 }
 
 function copyToClipboard(text) {
-  navigator.clipboard.writeText(text).then(() => alert("Link copied!"));
+  navigator.clipboard.writeText(text).then(() => alert("✅ Link copied!"));
 }
+
 function shareLink(link) {
   if (navigator.share) {
     navigator.share({ title: "Short Link", url: link });
   } else {
-    alert("Share not supported");
+    alert("Share not supported on this device");
   }
 }
