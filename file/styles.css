@@ -43,7 +43,7 @@ body {
 .shortener-box {
   background: rgba(255, 255, 255, 0.04);
   border-radius: 20px;
-  padding: 40px 30px;
+  padding: 40px 50px;
   box-shadow: 0 0 20px rgba(45, 212, 191, 0.15);
   backdrop-filter: blur(14px);
   border: 1px solid rgba(255, 255, 255, 0.12);
