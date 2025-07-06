@@ -45,9 +45,81 @@ function signIn() {
     .catch(err => alert("❌ " + err.message));
 }
 
+
+
 function signOut() {
-  auth.signOut();
+  auth.signOut()
+    .then(() => {
+      alert("👋 Signed out successfully.");
+      location.reload(); // refresh the page
+    })
+    .catch(err => {
+      alert("❌ Error signing out: " + err.message);
+    });
 }
+
+
+function resetPassword() {
+  const email = document.getElementById("email").value.trim();
+  const resetBtn = document.getElementById("resetBtn");
+
+  if (!email) return alert("❌ Please enter your email above.");
+
+  auth.sendPasswordResetEmail(email)
+    .then(() => {
+      alert("📩 Password reset email sent! Check your inbox.");
+      startResetCooldown(); // start the timer
+    })
+    .catch(err => alert("❌ " + err.message));
+}
+
+// Automatically enable/disable reset button based on input
+document.getElementById("email").addEventListener("input", () => {
+  const emailInput = document.getElementById("email").value.trim();
+  const resetBtn = document.getElementById("resetBtn");
+
+  // Only allow enabling if not in cooldown
+  if (!resetBtn.dataset.cooldown && emailInput.length > 0) {
+    resetBtn.disabled = false;
+    resetBtn.style.opacity = "1";
+    resetBtn.style.cursor = "pointer";
+  } else if (emailInput.length === 0) {
+    resetBtn.disabled = true;
+    resetBtn.style.opacity = "0.5";
+    resetBtn.style.cursor = "not-allowed";
+  }
+});
+
+function startResetCooldown() {
+  const resetBtn = document.getElementById("resetBtn");
+  let cooldown = 60;
+
+  resetBtn.disabled = true;
+  resetBtn.dataset.cooldown = "true";
+  resetBtn.style.opacity = "0.5";
+  resetBtn.style.cursor = "not-allowed";
+
+  const originalText = "🔄 Reset Password";
+
+  const interval = setInterval(() => {
+    resetBtn.textContent = `⏳ Retry in ${cooldown--}s...`;
+
+    if (cooldown < 0) {
+      clearInterval(interval);
+      delete resetBtn.dataset.cooldown;
+
+      const emailInput = document.getElementById("email").value.trim();
+      if (emailInput.length > 0) {
+        resetBtn.disabled = false;
+        resetBtn.style.opacity = "1";
+        resetBtn.style.cursor = "pointer";
+      }
+      resetBtn.textContent = originalText;
+    }
+  }, 1000);
+}
+
+
 
 function handleExpiryChange() {
   const expiry = document.getElementById("expiry").value;
@@ -129,13 +201,15 @@ function shorten() {
     } else {
       const expiryTimestamp = getExpiryTimestamp(expiryOpt, customExpiry);
       const userId = currentUser ? currentUser.uid : "guest";
+      const userEmail = currentUser ? currentUser.email : null;
 
       ref.set({
         url: longUrl,
         password: password || null,
         createdAt: Date.now(),
         expiresAt: expiryTimestamp || null,
-        userId
+        userId,
+        userEmail
       }, error => {
         showLoader(false);
         if (error) {
