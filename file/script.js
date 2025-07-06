@@ -1,4 +1,4 @@
- const firebaseConfig = {
+  const firebaseConfig = {
     apiKey: "AIzaSyBKA3bxy1caa0QiGrn6AihtxufiO7xxTnI",
     authDomain: "futrshortener-7acf0.firebaseapp.com",
     databaseURL: "https://futrshortener-7acf0-default-rtdb.firebaseio.com",
@@ -119,8 +119,8 @@
           if (error) {
             updateResultBox("❌ Failed to save. Try again.", false);
           } else {
-            const shortUrl = ${location.origin}/?alias=${alias};
-            updateResultBox(
+            const shortUrl = `${location.origin}/file/?alias=${alias}`;
+            updateResultBox(`
               <div class="og-card">
                 <img src="https://api.apiflash.com/v1/urltoimage?access_key=b0e5bc53bdf0417eb10f041ec400ebaf&url=${encodeURIComponent(shortUrl)}" alt="Preview of ${shortUrl}" />
 
@@ -139,7 +139,7 @@
               <br>
               <button class="button" onclick="copyToClipboard('${shortUrl}')">📋 Copy</button><br><br>
               <img src="https://api.qrserver.com/v1/create-qr-code/?data=${encodeURIComponent(shortUrl)}&size=150x150" alt="QR Code" />
-            , true);
+            `, true);
           }
         });
       }
