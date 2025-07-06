@@ -2,33 +2,40 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>FutrEngine Shortener</title>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet" />
+  <title>FutrEngine Shortener v2</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
-  <div id="sidebar" class="sidebar">
-    <h3>🚀 FutrEngine</h3>
-    <ul>
-      <li onclick="showSection('shortener')">➕ Create Link</li>
-      <li onclick="showSection('mylinks')">📋 My Links</li>
-      <li onclick="signOut()">🚪 Logout</li>
-    </ul>
-  </div>
-  <button id="toggleSidebar" onclick="toggleSidebar()">☰</button>
-  <div id="userIdDisplay">👤 Guest</div>
-  <div id="authButtons">
-    <button onclick="signInWithGoogle()">🔐 Google Sign In</button>
-    <button onclick="showAuthModal()">📧 Email Login</button>
+  <!-- Auth bar -->
+  <div style="position: fixed; top: 10px; left: 20px; color: white;" id="userIdDisplay">👤 Guest</div>
+  <div style="position: fixed; top: 10px; right: 20px;" id="authButtons">
+    <button class="button" onclick="toggleAuthModal()">🔐 Login / Sign Up</button>
+    <button class="button" onclick="signOut()" style="display: none;">🚪 Sign Out</button>
   </div>
 
+  <!-- Auth Modal -->
+  <div id="authModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.6); z-index:9999; justify-content:center; align-items:center;">
+    <div style="background:#1e293b; padding:30px; border-radius:12px; color:white; width:300px;">
+      <h2 style="margin-top:0;">🔐 Auth Portal</h2>
+      <input id="email" placeholder="Email" class="input" type="email" />
+      <input id="password" placeholder="Password" class="input" type="password" />
+      <button class="button" onclick="signIn()">Login</button>
+      <button class="button" onclick="signUp()">Sign Up</button>
+      <button class="button" onclick="toggleAuthModal()">Close</button>
+    </div>
+  </div>
+
+  <!-- Main App -->
   <div class="main-container">
-    <div id="shortenerSection">
-      <h1 class="title">🔗 FutrEngine URL Shortener</h1>
-      <div class="shortener-box glass">
-        <input type="url" id="longUrl" placeholder="Paste your long URL" class="input" />
-        <input type="text" id="customAlias" placeholder="Custom alias (e.g. mylink)" class="input" />
-        <input type="password" id="linkPassword" placeholder="Password (optional)" class="input" />
+    <h1 class="title">🔗 FutrEngine URL Shortener v2</h1>
+
+    <div class="shortener-box glass">
+      <input type="url" id="longUrl" placeholder="Paste your long URL" class="input" />
+      <input type="text" id="customAlias" placeholder="Custom alias (e.g. mylink)" class="input" />
+      <input type="password" id="linkPassword" placeholder="Password (optional)" class="input" />
+      
+      <div class="expiry-wrapper">
         <select id="expiry" class="input" onchange="handleExpiryChange()">
           <option value="none">No Limit</option>
           <option value="1h">1 Hour</option>
@@ -36,35 +43,22 @@
           <option value="7d">7 Days</option>
           <option value="custom">Custom</option>
         </select>
-        <input type="datetime-local" id="customExpiry" class="input" style="display:none;" />
-        <button onclick="shorten()" class="button pulse">✨ Create Short Link</button>
+        <input type="datetime-local" id="customExpiry" class="input" style="display: none;" />
       </div>
-      <div id="result" class="result-box"></div>
+
+      <button onclick="shorten()" class="button pulse">✨ Create Short Link</button>
     </div>
 
-    <div id="myLinksSection" style="display:none;">
-      <h2>📋 My Links</h2>
-      <div id="myLinksList"></div>
-    </div>
+    <div id="result" class="result-box"></div>
   </div>
 
-  <!-- Auth Modal -->
-  <div class="auth-modal" id="authModal">
-    <div class="auth-box">
-      <h3 id="authTitle">Sign In</h3>
-      <input type="email" id="authEmail" placeholder="Email" />
-      <input type="password" id="authPassword" placeholder="Password" />
-      <button onclick="authSubmit()">Submit</button>
-      <button onclick="toggleAuthMode()">Switch to Sign Up</button>
-      <button onclick="closeAuth()">Close</button>
-    </div>
-  </div>
-
-  <div id="loader" class="loader-overlay" style="display: none;"><div class="spinner"></div></div>
-
+  <!-- Firebase SDK -->
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+
   <script src="script.js"></script>
+
+  <div id="loader" class="loader-overlay" style="display: none;"><div class="spinner"></div></div>
 </body>
 </html>
