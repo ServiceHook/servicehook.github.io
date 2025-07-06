@@ -11,101 +11,35 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 const auth = firebase.auth();
-
 let currentUser = null;
 
+// 🔐 Auth State
 auth.onAuthStateChanged(user => {
   currentUser = user;
-  document.getElementById("userIdDisplay").textContent = user
-    ? `👤 ${user.email || user.uid}`
-    : "👤 Guest";
+  document.getElementById("userIdDisplay").textContent = user ? `👤 ${user.displayName || user.email}` : "👤 Guest";
+  document.querySelector("button[onclick='signInWithGoogle()']").style.display = user ? "none" : "inline-block";
+  document.querySelector("button[onclick='signOut()']").style.display = user ? "inline-block" : "none";
+  document.getElementById("myLinksSection").style.display = user ? "block" : "none";
 
-  document.querySelector('#authButtons button[onclick="toggleAuthModal()"]').style.display = user ? "none" : "inline-block";
-  document.querySelector('#authButtons button[onclick="signOut()"]').style.display = user ? "inline-block" : "none";
+  if (user) loadMyLinks();
 });
 
-function toggleAuthModal() {
-  const modal = document.getElementById("authModal");
-  modal.style.display = modal.style.display === "flex" ? "none" : "flex";
+// 🔐 Google Sign In / Out
+function signInWithGoogle() {
+  const provider = new firebase.auth.GoogleAuthProvider();
+  auth.signInWithPopup(provider).catch(err => alert("Auth error: " + err.message));
 }
-
-function signUp() {
-  const email = document.getElementById("email").value.trim();
-  const password = document.getElementById("password").value;
-  auth.createUserWithEmailAndPassword(email, password)
-    .then(() => toggleAuthModal())
-    .catch(err => alert("❌ " + err.message));
-}
-
-function signIn() {
-  const email = document.getElementById("email").value.trim();
-  const password = document.getElementById("password").value;
-  auth.signInWithEmailAndPassword(email, password)
-    .then(() => toggleAuthModal())
-    .catch(err => alert("❌ " + err.message));
-}
-
 function signOut() {
   auth.signOut();
 }
 
-function handleExpiryChange() {
-  const expiry = document.getElementById("expiry").value;
-  document.getElementById("customExpiry").style.display = expiry === "custom" ? "block" : "none";
-}
-
-function showLoader(show = true) {
-  document.getElementById("loader").style.display = show ? "flex" : "none";
-}
-
-function updateResultBox(message, isSuccess = true) {
-  const box = document.getElementById("result");
-  box.className = "result-box " + (isSuccess ? "success" : "error");
-  box.innerHTML = message;
-}
-
-function isValidUrl(url) {
-  try {
-    new URL(url);
-    return true;
-  } catch {
-    return false;
-  }
-}
-
-function getExpiryTimestamp(option, custom) {
-  if (option === "custom" && custom) return new Date(custom).getTime();
-  const now = Date.now();
-  switch (option) {
-    case "1h": return now + 3600000;
-    case "1d": return now + 86400000;
-    case "7d": return now + 604800000;
-    default: return null;
-  }
-}
-
-function copyToClipboard(text) {
-  navigator.clipboard.writeText(text).then(() => alert("✅ Copied to clipboard!"));
-}
-
-function shareLink(link) {
-  if (navigator.share) {
-    navigator.share({ title: "Check this out!", url: link });
-  } else {
-    alert("❌ Browser doesn't support share.");
-  }
-}
-
+// 🔗 Shorten
 function shorten() {
   let longUrl = document.getElementById("longUrl").value.trim();
   let alias = document.getElementById("customAlias").value.trim();
   const password = document.getElementById("linkPassword").value.trim();
   const expiryOpt = document.getElementById("expiry").value;
   const customExpiry = document.getElementById("customExpiry").value;
-  const resultBox = document.getElementById("result");
-
-  resultBox.className = "result-box";
-  resultBox.innerHTML = "";
 
   if (!longUrl.startsWith("http")) longUrl = "https://" + longUrl;
   if (!isValidUrl(longUrl)) return updateResultBox("❌ Invalid URL", false);
@@ -121,7 +55,6 @@ function shorten() {
 
   const ref = db.ref("links/" + alias);
   showLoader(true);
-
   ref.once("value").then(snapshot => {
     if (snapshot.exists()) {
       showLoader(false);
@@ -138,28 +71,83 @@ function shorten() {
         userId
       }, error => {
         showLoader(false);
-        if (error) {
-          return updateResultBox("❌ Failed to shorten", false);
-        } else {
-          const shortUrl = `${location.origin}/file/?alias=${alias}`;
-          updateResultBox(`
-            <div class="og-card">
-              <img src="https://api.apiflash.com/v1/urltoimage?access_key=b0e5bc53bdf0417eb10f041ec400ebaf&url=${encodeURIComponent(shortUrl)}" />
-              <div class="og-info">
-                <h3>✅ Short Link Created</h3>
-                <p>${shortUrl}</p>
-                <div class="share-buttons">
-                  <a href="https://wa.me/?text=${encodeURIComponent(shortUrl)}" target="_blank">WhatsApp</a>
-                  <a href="https://t.me/share/url?url=${encodeURIComponent(shortUrl)}" target="_blank">Telegram</a>
-                  <a onclick="shareLink('${shortUrl}')" style="cursor:pointer;">More</a>
-                </div>
+        if (error) return updateResultBox("❌ Save failed", false);
+        const shortUrl = `${location.origin}/file/?alias=${alias}`;
+        updateResultBox(`
+          <div class="og-card">
+            <div class="og-info">
+              <h3>✅ Short Link Created</h3>
+              <p>${shortUrl}</p>
+              <div class="share-buttons">
+                <a href="https://wa.me/?text=${encodeURIComponent(shortUrl)}" target="_blank">WhatsApp</a>
+                <a href="https://t.me/share/url?url=${encodeURIComponent(shortUrl)}" target="_blank">Telegram</a>
+                <a onclick="copyToClipboard('${shortUrl}')" style="cursor:pointer;">📋 Copy</a>
               </div>
             </div>
-            <button class="button" onclick="copyToClipboard('${shortUrl}')">📋 Copy</button><br><br>
-            <img src="https://api.qrserver.com/v1/create-qr-code/?data=${encodeURIComponent(shortUrl)}&size=150x150" />
-          `, true);
-        }
+          </div>`, true);
+        if (currentUser) loadMyLinks();
       });
     }
   });
+}
+
+// 🧠 Utils
+function isValidUrl(url) {
+  try { new URL(url); return true; } catch { return false; }
+}
+function getExpiryTimestamp(option, custom) {
+  if (option === "custom" && custom) return new Date(custom).getTime();
+  const now = Date.now();
+  return {
+    "1h": now + 3600000,
+    "1d": now + 86400000,
+    "7d": now + 604800000,
+  }[option] || null;
+}
+function showLoader(show = true) {
+  document.getElementById("loader").style.display = show ? "flex" : "none";
+}
+function updateResultBox(msg, isSuccess = true) {
+  const box = document.getElementById("result");
+  box.className = "result-box " + (isSuccess ? "success" : "error");
+  box.innerHTML = msg;
+}
+function copyToClipboard(text) {
+  navigator.clipboard.writeText(text).then(() => alert("Copied!"));
+}
+
+// 📋 My Links
+function loadMyLinks() {
+  const uid = currentUser?.uid;
+  db.ref("links").orderByChild("userId").equalTo(uid).once("value").then(snapshot => {
+    const listDiv = document.getElementById("myLinksList");
+    listDiv.innerHTML = "";
+    snapshot.forEach(child => {
+      const alias = child.key;
+      const data = child.val();
+      const url = data.url;
+      const expires = data.expiresAt ? new Date(data.expiresAt).toLocaleString() : "Never";
+      listDiv.innerHTML += `
+        <div class="og-card">
+          <div class="og-info">
+            <h3>${alias}</h3>
+            <p><a href="${url}" target="_blank">${url}</a></p>
+            <small>Expires: ${expires}</small>
+            <div>
+              <button onclick="deleteLink('${alias}')">🗑️ Delete</button>
+            </div>
+          </div>
+        </div>`;
+    });
+  });
+}
+
+function deleteLink(alias) {
+  if (!confirm(`Delete link "${alias}"?`)) return;
+  db.ref("links/" + alias).remove().then(() => loadMyLinks());
+}
+
+function handleExpiryChange() {
+  document.getElementById("customExpiry").style.display =
+    document.getElementById("expiry").value === "custom" ? "block" : "none";
 }
