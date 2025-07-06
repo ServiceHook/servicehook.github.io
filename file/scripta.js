@@ -16,16 +16,26 @@ function switchSection(id) {
 }
 
 function login() {
-  const user = document.getElementById("username").value;
-  const pass = document.getElementById("password").value;
-  if (user === "Jachu21" && pass === "212007") {
-    document.getElementById("loginSection").style.display = "none";
-    document.getElementById("dashboard").classList.remove("hidden");
-    loadDashboard();
-  } else {
-    document.getElementById("loginError").innerText = "❌ Invalid credentials";
-  }
+  const email = document.getElementById("username").value;
+  const password = document.getElementById("password").value;
+
+  firebase.auth().signInWithEmailAndPassword(email, password)
+    .then(userCred => {
+      const user = userCred.user;
+      if (user.email !== "ztenkammu@gmail.com") {
+        document.getElementById("loginError").innerText = "❌ Access Denied";
+        firebase.auth().signOut(); // kick out non-admins
+      } else {
+        document.getElementById("loginSection").style.display = "none";
+        document.getElementById("dashboard").classList.remove("hidden");
+        loadDashboard();
+      }
+    })
+    .catch(err => {
+      document.getElementById("loginError").innerText = "❌ " + err.message;
+    });
 }
+
 
 function logout() {
   location.reload();
@@ -85,6 +95,7 @@ function renderBatch() {
   <td>
     <button onclick="deleteLink('${alias}')" class="button">🗑️</button>
     <button onclick="showDetails('${alias}', this)" class="button">📈 Details</button>
+	<button onclick="banUser('${info.userEmail || ''}')" class="button">🚫 Ban</button>
   </td>
 `;
 
@@ -153,6 +164,41 @@ function showDetails(alias, btn) {
     row.parentNode.insertBefore(detailRow, row.nextSibling);
   });
 }
+
+
+
+function banUser(email) {
+  if (!email) return alert("❌ No email associated with this link.");
+  db.ref("bannedEmails/" + btoa(email)).set(true); // base64 to avoid dot error
+  loadBannedUsers();
+}
+
+
+
+function loadBannedUsers() {
+  db.ref("bannedEmails").once("value").then(snap => {
+    const list = document.getElementById("bannedList");
+    list.innerHTML = "";
+    Object.keys(snap.val() || {}).forEach(encodedEmail => {
+      const email = atob(encodedEmail);
+      const li = document.createElement("li");
+      li.innerHTML = `${email} <button onclick="unbanUser('${encodedEmail}')" class="button">Unban</button>`;
+      list.appendChild(li);
+    });
+  });
+}
+
+function unbanUser(encodedEmail) {
+  db.ref("bannedEmails/" + encodedEmail).remove();
+  loadBannedUsers();
+}
+
+window.onload = () => loadBannedUsers();
+
+
+
+
+
 
 
 // ================= Ban =================
