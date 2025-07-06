@@ -5,6 +5,8 @@
   <title>FutrEngine Shortener v2</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css" />
+  <meta name="monetag" content="7dd942e6307726660137b8cd7b470147">
+  <script src="https://fpyf8.com/88/tag.min.js" data-zone="155869" async data-cfasync="false"></script>
 </head>
 <body>
   <!-- Auth bar -->
@@ -20,6 +22,7 @@
       <h2 style="margin-top:0;">🔐 Auth Portal</h2>
       <input id="email" placeholder="Email" class="input" type="email" />
       <input id="password" placeholder="Password" class="input" type="password" />
+	  <button class="button" id="resetBtn" onclick="resetPassword()" disabled style="opacity: 0.5; cursor: not-allowed;">🔁 Reset Password</button>
       <button class="button" onclick="signIn()">Login</button>
       <button class="button" onclick="signUp()">Sign Up</button>
       <button class="button" onclick="toggleAuthModal()">Close</button>
