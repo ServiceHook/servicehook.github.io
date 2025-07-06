@@ -2,13 +2,31 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>FutrEngine Shortener 2.0</title>
+  <title>FutrEngine Shortener v2</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css">
-  <script src="https://fpyf8.com/88/tag.min.js" data-zone="153280" async data-cfasync="false"></script>
-  <meta name="monetag" content="b19f6e9f443e4e2f86096afd4e0ad877">
+  <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
+  <!-- Auth bar -->
+  <div style="position: fixed; top: 10px; left: 20px; color: white;" id="userIdDisplay">👤 Guest</div>
+  <div style="position: fixed; top: 10px; right: 20px;" id="authButtons">
+    <button class="button" onclick="toggleAuthModal()">🔐 Login / Sign Up</button>
+    <button class="button" onclick="signOut()" style="display: none;">🚪 Sign Out</button>
+  </div>
+
+  <!-- Auth Modal -->
+  <div id="authModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.6); z-index:9999; justify-content:center; align-items:center;">
+    <div style="background:#1e293b; padding:30px; border-radius:12px; color:white; width:300px;">
+      <h2 style="margin-top:0;">🔐 Auth Portal</h2>
+      <input id="email" placeholder="Email" class="input" type="email" />
+      <input id="password" placeholder="Password" class="input" type="password" />
+      <button class="button" onclick="signIn()">Login</button>
+      <button class="button" onclick="signUp()">Sign Up</button>
+      <button class="button" onclick="toggleAuthModal()">Close</button>
+    </div>
+  </div>
+
+  <!-- Main App -->
   <div class="main-container">
     <h1 class="title">🔗 FutrEngine URL Shortener v2</h1>
 
@@ -19,15 +37,13 @@
       
       <div class="expiry-wrapper">
         <select id="expiry" class="input" onchange="handleExpiryChange()">
-  <option value="none">No Limit</option>
-  <option value="1h">1 Hour</option>
-  <option value="1d">1 Day</option>
-  <option value="7d">7 Days</option>
-  <option value="custom">Custom</option>
-</select>
-
-<input type="datetime-local" id="customExpiry" class="input" placeholder="Custom Expiry" style="display: none;" />
-
+          <option value="none">No Limit</option>
+          <option value="1h">1 Hour</option>
+          <option value="1d">1 Day</option>
+          <option value="7d">7 Days</option>
+          <option value="custom">Custom</option>
+        </select>
+        <input type="datetime-local" id="customExpiry" class="input" style="display: none;" />
       </div>
 
       <button onclick="shorten()" class="button pulse">✨ Create Short Link</button>
@@ -36,32 +52,13 @@
     <div id="result" class="result-box"></div>
   </div>
 
-  <!-- Firebase -->
+  <!-- Firebase SDK -->
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
 
   <script src="script.js"></script>
-  <div id="loader" class="loader-overlay" style="display: none;">
-  <div class="spinner"></div>
-</div>
 
-  <div id="loader" style="display:none; justify-content:center; align-items:center; position:fixed; inset:0; background:rgba(255,255,255,0.6); z-index:9999;">
-  <div class="dual-ring"></div>
-</div>
-<style>
-.dual-ring {
-  width: 60px;
-  height: 60px;
-  border: 6px solid transparent;
-  border-top: 6px solid #3b82f6;
-  border-bottom: 6px solid #8b5cf6;
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-}
-@keyframes spin {
-  to { transform: rotate(360deg); }
-}
-</style>
-
+  <div id="loader" class="loader-overlay" style="display: none;"><div class="spinner"></div></div>
 </body>
 </html>
