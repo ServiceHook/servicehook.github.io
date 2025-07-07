@@ -224,3 +224,178 @@ body {
   from { opacity: 0; transform: scale(0.95); }
   to { opacity: 1; transform: scale(1); }
 }
+
+.sidebar {
+  position: fixed;
+  left: 0;
+  top: 0;
+  width: 270px;
+  height: 100vh;
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(10px);
+  border-right: 1px solid rgba(255,255,255,0.1);
+  padding: 20px;
+  box-shadow: 2px 0 12px rgba(0,0,0,0.2);
+  z-index: 1000;
+  color: white;
+  overflow-y: auto;
+}
+.sidebar h2 {
+  font-size: 1.4rem;
+  margin-bottom: 10px;
+}
+.sidebar p {
+  font-size: 0.9rem;
+  margin-bottom: 10px;
+  color: #a3e635;
+}
+.sidebar ul {
+  list-style: none;
+  padding: 0;
+}
+.sidebar li {
+  margin: 8px 0;
+  background: rgba(255, 255, 255, 0.07);
+  padding: 8px 12px;
+  border-radius: 8px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.sidebar li a {
+  color: #38bdf8;
+  text-decoration: none;
+}
+.sidebar li button {
+  background: #ef4444;
+  color: white;
+  border: none;
+  padding: 4px 8px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 12px;
+}
+.hidden {
+  display: none !important;
+}
+
+
+.edit-form {
+  margin-top: 10px;
+  padding: 10px;
+  background: rgba(255,255,255,0.04);
+  border-radius: 10px;
+}
+.edit-form input {
+  width: 100%;
+  margin: 5px 0;
+  padding: 8px;
+  border-radius: 8px;
+  border: none;
+}
+.edit-form button {
+  margin-top: 5px;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 14px;
+  cursor: pointer;
+  background: #22c55e;
+  color: white;
+  border: none;
+}
+.edit-form button:nth-child(4) {
+  background: #ef4444;
+  margin-left: 5px;
+}
+
+
+body {
+  transition: background 0.6s ease, color 0.6s ease;
+}
+
+.shortener-box,
+.input,
+.button,
+.edit-form,
+.sidebar,
+#authModal,
+.og-card {
+  transition: all 0.4s ease-in-out;
+}
+
+/* Light Mode Core */
+body.light-mode {
+  background: linear-gradient(135deg, #ffffff, #e0e0e0);
+  color: #111;
+}
+
+/* Auth Modal in Light Mode */
+body.light-mode #authModal > div {
+  background: #f9fafb;
+  color: #111;
+}
+
+/* Light Inputs & Buttons */
+body.light-mode .input {
+  background: #f0f0f0;
+  color: #000;
+}
+
+body.light-mode .button {
+  background: linear-gradient(135deg, #0f2027, #203a43);
+  color: white;
+}
+
+body.light-mode .result-box.success {
+  background-color: #d4edda;
+  color: #155724;
+  border-left: 5px solid #28a745;
+}
+
+body.light-mode .result-box.error {
+  background-color: #f8d7da;
+  color: #721c24;
+  border-left: 5px solid #dc3545;
+}
+
+body.light-mode .og-card {
+  background: #fff;
+  color: #000;
+  box-shadow: 0 0 10px rgba(0,0,0,0.1);
+}
+
+body.light-mode .edit-form {
+  background: rgba(0, 0, 0, 0.05);
+}
+#toggleModeBtn.toggle-anim {
+  transform: scale(1.1);
+  box-shadow: 0 0 10px #38bdf8;
+  transition: all 0.3s ease;
+}
+
+
+/* Mini spinner inside buttons */
+.button.loading {
+  position: relative;
+  pointer-events: none;
+  opacity: 0.7;
+}
+
+.button.loading::after {
+  content: "";
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 16px;
+  height: 16px;
+  border: 2px solid white;
+  border-top: 2px solid transparent;
+  border-radius: 50%;
+  animation: spinBtn 0.7s linear infinite;
+}
+
+@keyframes spinBtn {
+  from { transform: translateY(-50%) rotate(0deg); }
+  to { transform: translateY(-50%) rotate(360deg); }
+}
