@@ -22,7 +22,17 @@ auth.onAuthStateChanged(user => {
 
   document.querySelector('#authButtons button[onclick="toggleAuthModal()"]').style.display = user ? "none" : "inline-block";
   document.querySelector('#authButtons button[onclick="signOut()"]').style.display = user ? "inline-block" : "none";
+
+  const sidebar = document.getElementById("sidebar");
+  if (user) {
+    document.getElementById("userEmail").textContent = user.email;
+    sidebar.classList.remove("hidden");
+    fetchUserLinks(user.uid);
+  } else {
+    sidebar.classList.add("hidden");
+  }
 });
+
 
 function toggleAuthModal() {
   const modal = document.getElementById("authModal");
@@ -32,18 +42,40 @@ function toggleAuthModal() {
 function signUp() {
   const email = document.getElementById("email").value.trim();
   const password = document.getElementById("password").value;
+  const signupBtn = document.getElementById("signupBtn");
+
+  signupBtn.classList.add("loading");
+
   auth.createUserWithEmailAndPassword(email, password)
-    .then(() => toggleAuthModal())
-    .catch(err => alert("❌ " + err.message));
+    .then(() => {
+      signupBtn.classList.remove("loading");
+      toggleAuthModal();
+    })
+    .catch(err => {
+      signupBtn.classList.remove("loading");
+      alert("❌ " + err.message);
+    });
 }
+
 
 function signIn() {
   const email = document.getElementById("email").value.trim();
   const password = document.getElementById("password").value;
+  const loginBtn = document.getElementById("loginBtn");
+
+  loginBtn.classList.add("loading");
+
   auth.signInWithEmailAndPassword(email, password)
-    .then(() => toggleAuthModal())
-    .catch(err => alert("❌ " + err.message));
+    .then(() => {
+      loginBtn.classList.remove("loading");
+      toggleAuthModal();
+    })
+    .catch(err => {
+      loginBtn.classList.remove("loading");
+      alert("❌ " + err.message);
+    });
 }
+
 
 
 
@@ -237,3 +269,142 @@ function shorten() {
     }
   });
 }
+
+
+let linksListener = null;
+
+function fetchUserLinks(uid) {
+  const userLinksRef = db.ref("links");
+  const linksList = document.getElementById("userLinksList");
+
+  // Remove previous listener if any
+  if (linksListener) {
+    userLinksRef.off("value", linksListener);
+  }
+
+  // Attach new real-time listener
+  linksListener = userLinksRef.orderByChild("userId").equalTo(uid);
+  linksListener.on("value", snapshot => {
+    linksList.innerHTML = "";
+
+    if (!snapshot.exists()) {
+      linksList.innerHTML = "<li>No links found.</li>";
+      return;
+    }
+
+    snapshot.forEach(child => {
+      const alias = child.key;
+      const data = child.val();
+
+      const li = document.createElement("li");
+      li.innerHTML = `
+        <div>
+          <strong>🔗 <a href="/file/?alias=${alias}" target="_blank">${alias}</a></strong><br/>
+          ${data.password ? `🔒 Password: ${data.password}` : `🔓 No password`}
+        </div>
+        <div style="display:flex; gap:5px; margin-top:5px;">
+          <button onclick="showEditForm('${alias}', '${data.password || ""}')">✏️ Edit</button>
+          <button onclick="deleteUserLink('${alias}')">🗑️</button>
+        </div>
+        <div id="edit-${alias}" class="edit-form hidden">
+          <input type="text" placeholder="New alias" id="new-alias-${alias}" class="input" value="${alias}" />
+          <input type="password" placeholder="New password" id="new-pass-${alias}" class="input" />
+          <button onclick="updateUserLink('${alias}')">✅ Save</button>
+          <button onclick="cancelEdit('${alias}')">❌ Cancel</button>
+        </div>
+      `;
+      linksList.appendChild(li);
+    });
+  });
+}
+
+
+function deleteUserLink(alias) {
+  if (!confirm(`Delete the short link "${alias}"?`)) return;
+  db.ref(`links/${alias}`).remove()
+    .then(() => {
+      alert("✅ Link deleted.");
+      if (currentUser) fetchUserLinks(currentUser.uid);
+    })
+    .catch(err => alert("❌ Error deleting: " + err.message));
+}
+
+
+function showEditForm(alias, password) {
+  document.getElementById(`edit-${alias}`).classList.remove("hidden");
+}
+
+function cancelEdit(alias) {
+  document.getElementById(`edit-${alias}`).classList.add("hidden");
+}
+
+function updateUserLink(oldAlias) {
+  const newAlias = document.getElementById(`new-alias-${oldAlias}`).value.trim();
+  const newPassword = document.getElementById(`new-pass-${oldAlias}`).value.trim();
+
+  if (!newAlias.match(/^[a-zA-Z0-9_-]+$/)) {
+    return alert("❌ Alias must be alphanumeric with - or _");
+  }
+
+  const oldRef = db.ref("links/" + oldAlias);
+  const newRef = db.ref("links/" + newAlias);
+
+  oldRef.once("value", snapshot => {
+    if (!snapshot.exists()) {
+      return alert("❌ Original link not found");
+    }
+
+    const data = snapshot.val();
+    data.password = newPassword || null;
+
+    if (oldAlias === newAlias) {
+      // Only password change
+      oldRef.set(data).then(() => {
+        alert("✅ Password updated");
+        fetchUserLinks(currentUser.uid);
+      });
+    } else {
+      // Changing alias
+      newRef.once("value", snap => {
+        if (snap.exists()) {
+          return alert("❌ New alias is already taken");
+        }
+
+        newRef.set(data).then(() => {
+          oldRef.remove().then(() => {
+            alert("✅ Alias and password updated");
+            fetchUserLinks(currentUser.uid);
+          });
+        });
+      });
+    }
+  });
+}
+
+function toggleMode() {
+  const body = document.body;
+  const isLight = body.classList.toggle("light-mode");
+  localStorage.setItem("theme", isLight ? "light" : "dark");
+
+  const toggleBtn = document.getElementById("toggleModeBtn");
+  toggleBtn.classList.add("toggle-anim");
+  toggleBtn.textContent = isLight ? "🌙 Dark Mode" : "☀️ Light Mode";
+
+  setTimeout(() => toggleBtn.classList.remove("toggle-anim"), 600);
+}
+
+// On Load, Apply Saved Theme with Animation
+window.addEventListener("DOMContentLoaded", () => {
+  const savedTheme = localStorage.getItem("theme");
+  const toggleBtn = document.getElementById("toggleModeBtn");
+
+  if (savedTheme === "light") {
+    document.body.classList.add("light-mode");
+    toggleBtn.textContent = "🌙 Dark Mode";
+  } else {
+    toggleBtn.textContent = "☀️ Light Mode";
+  }
+});
+
+
+s
