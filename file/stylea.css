@@ -12,6 +12,7 @@ body {
   display: flex;
   justify-content: center;
   align-items: center;
+  cursor: url('https://search.jachu.xyz/images/cursor.cur'), auto;
 }
 
 /* ===== LOGIN SECTION ===== */
