@@ -77,9 +77,10 @@
       document.body.innerHTML = `<h2 style="color: #f87171; text-align: center;">❌ ${msg}</h2>`;
     };
 
-    if (!alias || alias === "404.html") {
-  window.location.href = "/file/short.html";
+    if (!alias) {
+  showError("link to created to this alias");
 }
+
 
     } else {
       db.ref("links/" + alias).once("value").then(snapshot => {
