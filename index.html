@@ -3,17 +3,14 @@
 <head>
   <meta charset="UTF-8" />
   <title>Wait To Redirection</title>
-
-  <!-- Firebase & Monetag -->
   <script src="https://fpyf8.com/88/tag.min.js" data-zone="153286" async data-cfasync="false"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
-  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8673570286288888"
-     crossorigin="anonymous"></script>
   <meta name="monetag" content="b19f6e9f443e4e2f86096afd4e0ad877">
   <meta name="google-adsense-account" content="ca-pub-8673570286288888">
-  
-  <!-- 🔮 Dual Ring Loader Styles -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="robots" content="noindex, nofollow" />
+
   <style>
     body {
       margin: 0;
@@ -56,10 +53,8 @@
 </head>
 <body>
 
-  
-  <!-- 🌀 Loading Spinner -->
   <div class="dual-ring"></div>
-  <div class="msg">Hold on, redirecting... 🚀 <br> Stay happy and safe. ~ Jachu</div>
+  <div class="msg">Hold on, redirecting... 🚀<br>Stay happy and safe. ~ Jachu</div>
 
   <script>
     const firebaseConfig = {
@@ -75,23 +70,25 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
-    const urlParams = new URLSearchParams(window.location.search);
-    const alias = urlParams.get('alias');
+    const alias = window.location.pathname.replace("/", "").trim();
 
     const showError = (msg) => {
       document.body.innerHTML = `<h2 style="color: #f87171; text-align: center;">❌ ${msg}</h2>`;
     };
 
     if (!alias) {
-      window.location.href = "/file/short.html";
+      showError("Alias not provided.");
     } else {
       db.ref("links/" + alias).once("value").then(snapshot => {
         if (!snapshot.exists()) return showError("Link not found.");
 
         const data = snapshot.val();
-        const { url, password } = data;
+        const { url, password, expiresAt } = data;
 
         if (!url) return showError("Invalid redirection target.");
+
+        const now = Date.now();
+        if (expiresAt && now > expiresAt) return showError("⏳ Link has expired.");
 
         const recordClickAndRedirect = () => {
           fetch("https://ipapi.co/json/")
@@ -149,7 +146,5 @@
       });
     }
   </script>
-
-  
 </body>
 </html>
