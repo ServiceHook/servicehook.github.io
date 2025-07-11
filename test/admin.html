@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>FutrEngine Admin Panel</title>
+  <link rel="stylesheet" href="stylea.css" />
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+  
+</head>
+<body>
+  <!-- Login Section -->
+  <div id="loginSection">
+    <h2>Admin Login</h2>
+    <input type="text" id="username" placeholder="Email" class="input" />
+    <input type="password" id="password" placeholder="Password" class="input" />
+    <button onclick="login()" class="button">Login</button>
+    <p id="loginError"></p>
+  </div>
+<!-- Subscription Section -->
+<div id="subscription" class="section hidden">
+  <h2>📬 Subscription Users</h2>
+  <p>Toggle access for users who purchased the Ad-Free Plan</p>
+  <table>
+    <thead>
+      <tr><th>Email</th><th>UID</th><th>Txn ID</th><th>Date</th><th>Status</th><th>Action</th></tr>
+    </thead>
+    <tbody id="subList"></tbody>
+  </table>
+</div>
+
+  <!-- Admin Panel (hidden by default) -->
+  <div id="adminContent" style="display: none;">
+    <div class="sidebar">
+      <h1>FutrEngine</h1>
+      <ul>
+  <li onclick="switchSection('dashboard')">📊 Dashboard</li>
+  <li onclick="switchSection('manage')">🔗 Manage URLs</li>
+  <li onclick="switchSection('ban')">🚫 Ban/Unban</li>
+  <li onclick="switchSection('subscription')">📬 Subscriptions</li>
+  <li onclick="logout()">🚪 Logout</li>
+</ul>
+
+    </div>
+
+    <div class="main">
+      <!-- Dashboard Section -->
+      <div id="dashboard" class="section hidden">
+        <h2>📊 Dashboard</h2>
+        <p><strong>Today's Links:</strong> <span id="todayCount">0</span></p>
+        <p><strong>Total Links:</strong> <span id="totalCount">0</span></p>
+        <h3>🕓 Last 5 Links</h3>
+        <ul id="lastLinks"></ul>
+      </div>
+
+      <!-- Manage URLs Section -->
+      <div id="manage" class="section hidden">
+        <h2>🔗 Manage URLs</h2>
+        <button onclick="loadLinks()" class="button">🔁 Refresh</button>
+		<input type="text" id="searchInput" oninput="searchLinks()" placeholder="Search alias or URL..." class="input" style="max-width: 300px; margin-bottom: 10px;" />
+
+        <table id="urlTable">
+          <thead>
+            <tr><th>Alias</th><th>URL</th><th>Clicks</th><th>Actions</th></tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+        <div class="pagination">
+          <button onclick="showPrevBatch()" class="button">⬅ Prev</button>
+          <span id="pageInfo">Page 1</span>
+          <button onclick="showNextBatch()" class="button">Next ➡</button>
+        </div>
+      </div>
+
+      <!-- Ban Section -->
+      <div id="ban" class="section hidden">
+        <h2>🚫 Banned Users</h2>
+        <p>Click "🚫 Ban" in Manage URLs to block users by email</p>
+        <ul id="bannedList"></ul>
+      </div>
+    </div>
+  </div>
+
+  <script src="scripta.js"></script>
+</body>
+</html>
