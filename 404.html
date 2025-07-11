@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Redirecting...</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+  <meta name="robots" content="noindex, nofollow" />
+
+  <style>
+    body {
+      background: #0f172a;
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      font-family: 'Poppins', sans-serif;
+      text-align: center;
+    }
+    input, button {
+      padding: 10px;
+      margin-top: 10px;
+      font-size: 16px;
+    }
+  </style>
+</head>
+<body>
+  <div id="status">🔍 Loading...</div>
+
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyBKA3bxy1caa0QiGrn6AihtxufiO7xxTnI",
+      authDomain: "futrshortener-7acf0.firebaseapp.com",
+      databaseURL: "https://futrshortener-7acf0-default-rtdb.firebaseio.com",
+      projectId: "futrshortener-7acf0",
+      storageBucket: "futrshortener-7acf0.appspot.com",
+      messagingSenderId: "863839648409",
+      appId: "1:863839648409:web:d20ae154fe1c9dc1b19608"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+
+    const alias = window.location.pathname.replace("/", "").trim();
+
+    const status = document.getElementById("status");
+
+    if (!alias) {
+      status.textContent = "❌ Invalid URL";
+    } else {
+      db.ref("links/" + alias).once("value").then(snapshot => {
+        if (!snapshot.exists()) {
+          status.textContent = "❌ Link not found";
+          return;
+        }
+
+        const data = snapshot.val();
+        const now = Date.now();
+
+        if (data.expiresAt && now > data.expiresAt) {
+          status.textContent = "⏳ Link has expired.";
+        } else if (data.password) {
+          status.innerHTML = `
+            🔒 This link is password-protected<br><br>
+            <input type="password" id="pass" placeholder="Enter password" />
+            <br>
+            <button onclick="unlock()">🔓 Unlock</button>
+            <div id="err" style="color: red; margin-top: 10px;"></div>
+          `;
+
+          window.unlock = function () {
+            const inputPass = document.getElementById("pass").value.trim();
+            if (inputPass === data.password) {
+              window.location.href = data.url;
+            } else {
+              document.getElementById("err").textContent = "❌ Wrong password!";
+            }
+          };
+        } else {
+          window.location.href = data.url;
+        }
+      });
+    }
+  </script>
+</body>
+</html>
