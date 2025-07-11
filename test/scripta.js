@@ -253,23 +253,25 @@ function loadSubscriptionUsers() {
   const tbody = document.getElementById("subList");
   tbody.innerHTML = "🔄 Loading...";
 
-  db.ref("users").once("value").then(snap => {
+  db.ref("subscriptions").once("value").then(snap => {
     tbody.innerHTML = "";
-    const users = snap.val() || {};
-    const filtered = Object.entries(users).filter(([_, data]) => data.isSubscribed);
+    const subs = snap.val() || {};
+
+    const filtered = Object.entries(subs).filter(([_, data]) => data.status === "pending" || data.status === "approved");
 
     if (filtered.length === 0) {
       tbody.innerHTML = "<tr><td colspan='6'><em>No subscribed users found.</em></td></tr>";
       return;
     }
 
-    filtered.forEach(([uid, data]) => {
+    filtered.forEach(([key, data]) => {
       const tr = document.createElement("tr");
 
       const email = data.email || "N/A";
       const txn = data.txnId || "N/A";
-      const date = data.subscriptionDate ? new Date(data.subscriptionDate).toLocaleString() : "N/A";
-      const status = data.isSubscribed ? "✅ Active" : "❌ Inactive";
+      const date = data.purchasedAt ? new Date(data.purchasedAt).toLocaleString() : "N/A";
+      const uid = data.uid || "N/A";
+      const status = data.status === "approved" ? "✅ Approved" : "⏳ Pending";
 
       tr.innerHTML = `
         <td>${email}</td>
@@ -278,8 +280,8 @@ function loadSubscriptionUsers() {
         <td>${date}</td>
         <td>${status}</td>
         <td>
-          <button onclick="toggleSub('${uid}', ${data.isSubscribed})" class="button">
-            ${data.isSubscribed ? "Disable ❌" : "Enable ✅"}
+          <button onclick="toggleSubStatus('${key}', '${data.status}')" class="button">
+            ${data.status === "approved" ? "Disable ❌" : "Approve ✅"}
           </button>
         </td>
       `;
@@ -288,6 +290,7 @@ function loadSubscriptionUsers() {
     });
   });
 }
+
 
 
 function toggleSub(uid, isSubscribed) {
