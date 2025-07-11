@@ -41,20 +41,26 @@ function initiateSubscription() {
 
 function submitTxnId() {
   const txnId = document.getElementById("txnIdInput").value.trim();
-  if (!txnId) return alert("❌ Please enter a valid transaction ID.");
+  if (!txnId) return alert("❌ Please enter your transaction ID.");
 
-  const wrapper = document.querySelector("div[style*='z-index:99999']");
-  wrapper.remove();
+  const user = firebase.auth().currentUser;
+  if (!user) return alert("❌ You must be logged in.");
 
-  const userRef = db.ref(`users/${currentUser.uid}`);
-  userRef.update({
-    isSubscribed: true,
+  firebase.database().ref("subscriptions/" + btoa(user.email)).set({
+    uid: user.uid,
+    email: user.email,
     txnId: txnId,
-    subscriptionDate: Date.now()
+    purchasedAt: Date.now(),
+    status: "pending" // You can change this to "active" after verification
   }).then(() => {
-    alert("🎉 Subscription submitted! You’ll see ad-free once confirmed.");
+    alert("✅ Submitted! Your subscription will be activated soon.");
+    
+    // ✅ FIX: Check if modal exists before removing
+    const modal = document.getElementById("txnModal");
+    if (modal) modal.remove();
   });
 }
+
 
 
 auth.onAuthStateChanged(user => {
