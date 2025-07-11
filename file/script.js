@@ -407,4 +407,10 @@ window.addEventListener("DOMContentLoaded", () => {
 });
 
 
-s
+function applyMobileThemeIfNeeded() {
+  if (window.innerWidth <= 768) {
+    document.body.classList.add("mobile-theme");
+  }
+}
+
+window.addEventListener("DOMContentLoaded", applyMobileThemeIfNeeded);
