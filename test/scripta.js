@@ -310,3 +310,14 @@ function switchSection(id) {
   }
 }
 
+function toggleSubStatus(encodedEmail, currentStatus) {
+  const isApproved = currentStatus === "approved";
+  db.ref("subscriptions/" + encodedEmail).update({
+    status: isApproved ? "pending" : "approved"
+  }).then(() => {
+    alert("✅ Subscription status updated.");
+    loadSubscriptionUsers();
+  });
+}
+
+
