@@ -399,3 +399,127 @@ body.light-mode .edit-form {
   from { transform: translateY(-50%) rotate(0deg); }
   to { transform: translateY(-50%) rotate(360deg); }
 }
+
+
+/* ========== MODERN MOBILE THEME ========== */
+body.mobile-theme {
+  background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+  font-size: 16px;
+  color: #f1f5f9;
+  padding-bottom: 100px;
+  overflow-x: hidden;
+}
+
+body.mobile-theme .main-container {
+  width: 100%;
+  padding: 15px;
+  max-width: none;
+}
+
+body.mobile-theme .title {
+  font-size: 1.6rem;
+  font-weight: 600;
+  color: #38bdf8;
+  margin-top: 10px;
+  margin-bottom: 25px;
+}
+
+body.mobile-theme .shortener-box {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  padding: 25px 18px;
+  border-radius: 20px;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.5);
+}
+
+body.mobile-theme .input {
+  padding: 14px;
+  margin: 10px 0;
+  font-size: 1rem;
+  background: #1e293b;
+  color: white;
+  border: 1px solid #334155;
+  border-radius: 12px;
+}
+
+body.mobile-theme .input::placeholder {
+  color: #94a3b8;
+}
+
+body.mobile-theme .button {
+  background: linear-gradient(135deg, #8e2de2, #4a00e0);
+  font-size: 1rem;
+  padding: 14px;
+  border-radius: 14px;
+  width: 100%;
+  margin-top: 10px;
+  box-shadow: 0 0 12px rgba(72, 0, 255, 0.4);
+}
+
+body.mobile-theme .button:hover {
+  opacity: 0.9;
+}
+
+body.mobile-theme .expiry-wrapper {
+  flex-direction: column;
+  gap: 10px;
+}
+
+body.mobile-theme .result-box {
+  font-size: 0.95rem;
+  padding: 14px;
+  margin-top: 15px;
+  border-radius: 12px;
+}
+
+body.mobile-theme .og-card {
+  flex-direction: column;
+  box-shadow: none;
+  background: rgba(30, 41, 59, 0.5);
+  border: 1px solid rgba(148, 163, 184, 0.1);
+}
+
+body.mobile-theme .og-card img {
+  width: 100%;
+  height: auto;
+}
+
+body.mobile-theme .sidebar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  top: unset;
+  height: auto;
+  max-height: 65vh;
+  overflow-y: auto;
+  background: rgba(0, 0, 0, 0.6);
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(15px);
+  box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.4);
+  z-index: 2000;
+  padding: 20px;
+  border-radius: 20px 20px 0 0;
+}
+
+body.mobile-theme .sidebar h2 {
+  font-size: 1.2rem;
+  color: #facc15;
+}
+
+body.mobile-theme .sidebar li {
+  font-size: 0.95rem;
+  padding: 10px;
+  margin-bottom: 10px;
+  background: rgba(148, 163, 184, 0.1);
+  border-radius: 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+body.mobile-theme .sidebar li button {
+  padding: 5px 10px;
+  font-size: 13px;
+  border-radius: 8px;
+}
