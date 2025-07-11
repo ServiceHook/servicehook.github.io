@@ -77,12 +77,9 @@
       document.body.innerHTML = `<h2 style="color: #f87171; text-align: center;">❌ ${msg}</h2>`;
     };
 
-    if (!alias) {
-  showError("link to created to this alias");
-}
-
-
-    } else {
+if (!alias) {
+  showError("❌ No link created using this alias.");
+} else {
       db.ref("links/" + alias).once("value").then(snapshot => {
         if (!snapshot.exists()) return showError("Link not found.");
 
