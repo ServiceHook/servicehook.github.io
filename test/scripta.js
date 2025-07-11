@@ -289,6 +289,7 @@ function loadSubscriptionUsers() {
   });
 }
 
+
 function toggleSub(uid, isSubscribed) {
   db.ref(`users/${uid}`).update({ isSubscribed: !isSubscribed }).then(() => {
     alert("✅ Subscription status updated.");
@@ -305,3 +306,4 @@ function switchSection(id) {
     loadSubscriptionUsers();
   }
 }
+
