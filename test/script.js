@@ -111,6 +111,34 @@ function showAds() {
 }
 
 
+firebase.auth().onAuthStateChanged(user => {
+  if (user) {
+    const uid = user.uid;
+    // Check if user is subscribed
+    firebase.database().ref("subscriptions").orderByChild("uid").equalTo(uid).once("value").then(snapshot => {
+      const subs = snapshot.val();
+      if (subs) {
+        const subData = Object.values(subs)[0];
+        if (subData.status === "approved") {
+          console.log("✅ Ad-Free Subscriber - Removing Ads");
+          const adContainer = document.getElementById("ads-container");
+          if (adContainer) adContainer.remove();
+        } else {
+          console.log("ℹ️ Subscription not approved yet");
+        }
+      } else {
+        console.log("🧑 Not a subscriber");
+      }
+    });
+  }
+});
+
+const badge = document.createElement("span");
+badge.innerText = "🌟 PRO USER (Ad-Free)";
+badge.style.cssText = "background:#10b981; color:white; padding:4px 10px; border-radius:5px; margin-left:10px;";
+document.getElementById("topUserInfo").appendChild(badge);
+
+
 
 function toggleAuthModal() {
   const modal = document.getElementById("authModal");
@@ -493,3 +521,6 @@ function applyMobileThemeIfNeeded() {
 }
 
 window.addEventListener("DOMContentLoaded", applyMobileThemeIfNeeded);
+
+
+
