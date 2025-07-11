@@ -8,6 +8,7 @@ body {
   align-items: center;
   justify-content: center;
   min-height: 100vh;
+  cursor: url('https://search.jachu.xyz/images/cursor.cur'), auto;
 }
 
 .main-container {
