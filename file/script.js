@@ -14,22 +14,39 @@ const auth = firebase.auth();
 
 let currentUser = null;
 
+/**
+ * Toggles the sidebar visibility by adding/removing a class from the body.
+ */
+function toggleSidebar() {
+  document.body.classList.toggle("sidebar-open");
+}
+
 auth.onAuthStateChanged(user => {
   currentUser = user;
-  document.getElementById("userIdDisplay").textContent = user
-    ? `👤 ${user.email || user.uid}`
-    : "👤 Guest";
+  const body = document.body;
 
-  document.querySelector('#authButtons button[onclick="toggleAuthModal()"]').style.display = user ? "none" : "inline-block";
-  document.querySelector('#authButtons button[onclick="signOut()"]').style.display = user ? "inline-block" : "none";
+  // Clear previous state
+  body.classList.remove("logged-in", "sidebar-open");
 
-  const sidebar = document.getElementById("sidebar");
   if (user) {
+    // User is logged in
+    body.classList.add("logged-in");
+    document.getElementById("userIdDisplay").textContent = `👤 ${user.email || user.uid}`;
+    document.querySelector('#authButtons button[onclick="toggleAuthModal()"]').style.display = "none";
+    document.querySelector('#authButtons button[onclick="signOut()"]').style.display = "inline-block";
+    
+    // Populate and fetch links for the sidebar
     document.getElementById("userEmail").textContent = user.email;
-    sidebar.classList.remove("hidden");
     fetchUserLinks(user.uid);
   } else {
-    sidebar.classList.add("hidden");
+    // User is a guest
+    document.getElementById("userIdDisplay").textContent = "👤 Guest";
+    document.querySelector('#authButtons button[onclick="toggleAuthModal()"]').style.display = "inline-block";
+    document.querySelector('#authButtons button[onclick="signOut()"]').style.display = "none";
+    
+    // Clear sidebar content
+    document.getElementById("userLinksList").innerHTML = "";
+    document.getElementById("userEmail").textContent = "";
   }
 });
 
@@ -76,9 +93,6 @@ function signIn() {
     });
 }
 
-
-
-
 function signOut() {
   auth.signOut()
     .then(() => {
@@ -90,27 +104,23 @@ function signOut() {
     });
 }
 
-
 function resetPassword() {
   const email = document.getElementById("email").value.trim();
-  const resetBtn = document.getElementById("resetBtn");
-
   if (!email) return alert("❌ Please enter your email above.");
 
   auth.sendPasswordResetEmail(email)
     .then(() => {
       alert("📩 Password reset email sent! Check your inbox.");
-      startResetCooldown(); // start the timer
+      startResetCooldown();
     })
     .catch(err => alert("❌ " + err.message));
 }
 
-// Automatically enable/disable reset button based on input
+// --- Helper functions for UI and logic ---
+
 document.getElementById("email").addEventListener("input", () => {
   const emailInput = document.getElementById("email").value.trim();
   const resetBtn = document.getElementById("resetBtn");
-
-  // Only allow enabling if not in cooldown
   if (!resetBtn.dataset.cooldown && emailInput.length > 0) {
     resetBtn.disabled = false;
     resetBtn.style.opacity = "1";
@@ -125,21 +135,16 @@ document.getElementById("email").addEventListener("input", () => {
 function startResetCooldown() {
   const resetBtn = document.getElementById("resetBtn");
   let cooldown = 60;
-
   resetBtn.disabled = true;
   resetBtn.dataset.cooldown = "true";
   resetBtn.style.opacity = "0.5";
   resetBtn.style.cursor = "not-allowed";
-
-  const originalText = "🔄 Reset Password";
-
+  const originalText = "🔁 Reset Password";
   const interval = setInterval(() => {
     resetBtn.textContent = `⏳ Retry in ${cooldown--}s...`;
-
     if (cooldown < 0) {
       clearInterval(interval);
       delete resetBtn.dataset.cooldown;
-
       const emailInput = document.getElementById("email").value.trim();
       if (emailInput.length > 0) {
         resetBtn.disabled = false;
@@ -150,8 +155,6 @@ function startResetCooldown() {
     }
   }, 1000);
 }
-
-
 
 function handleExpiryChange() {
   const expiry = document.getElementById("expiry").value;
@@ -169,12 +172,7 @@ function updateResultBox(message, isSuccess = true) {
 }
 
 function isValidUrl(url) {
-  try {
-    new URL(url);
-    return true;
-  } catch {
-    return false;
-  }
+  try { new URL(url); return true; } catch { return false; }
 }
 
 function getExpiryTimestamp(option, custom) {
@@ -248,10 +246,9 @@ function shorten() {
           return updateResultBox("❌ Failed to shorten", false);
         } else {
           const shortUrl = `${location.origin}/${alias}`;
-
           updateResultBox(`
             <div class="og-card">
-              <img src="https://api.apiflash.com/v1/urltoimage?access_key=b0e5bc53bdf0417eb10f041ec400ebaf&url=${encodeURIComponent(shortUrl)}" />
+              <img src="https://api.apiflash.com/v1/urltoimage?access_key=b0e5bc53bdf0417eb10f041ec400ebaf&url=${encodeURIComponent(shortUrl)}" onerror="this.style.display='none'"/>
               <div class="og-info">
                 <h3>✅ Short Link Created</h3>
                 <p>${shortUrl}</p>
@@ -271,43 +268,33 @@ function shorten() {
   });
 }
 
-
 let linksListener = null;
 
 function fetchUserLinks(uid) {
   const userLinksRef = db.ref("links");
   const linksList = document.getElementById("userLinksList");
-
-  // Remove previous listener if any
-  if (linksListener) {
-    userLinksRef.off("value", linksListener);
-  }
-
-  // Attach new real-time listener
+  if (linksListener) userLinksRef.off("value", linksListener);
   linksListener = userLinksRef.orderByChild("userId").equalTo(uid);
   linksListener.on("value", snapshot => {
     linksList.innerHTML = "";
-
     if (!snapshot.exists()) {
       linksList.innerHTML = "<li>No links found.</li>";
       return;
     }
-
     snapshot.forEach(child => {
       const alias = child.key;
       const data = child.val();
-
       const li = document.createElement("li");
       li.innerHTML = `
         <div>
-          <strong>🔗 <a href="/file/?alias=${alias}" target="_blank">${alias}</a></strong><br/>
-          ${data.password ? `🔒 Password: ${data.password}` : `🔓 No password`}
+          <strong>🔗 <a href="/${alias}" target="_blank">${alias}</a></strong><br/>
+          <small>${data.password ? `🔒 Password protected` : `🔓 Public`}</small>
         </div>
         <div style="display:flex; gap:5px; margin-top:5px;">
-          <button onclick="showEditForm('${alias}', '${data.password || ""}')">✏️ Edit</button>
+          <button onclick="showEditForm('${alias}')">✏️ Edit</button>
           <button onclick="deleteUserLink('${alias}')">🗑️</button>
         </div>
-        <div id="edit-${alias}" class="edit-form hidden">
+        <div id="edit-${alias}" class="edit-form" style="display:none;">
           <input type="text" placeholder="New alias" id="new-alias-${alias}" class="input" value="${alias}" />
           <input type="password" placeholder="New password" id="new-pass-${alias}" class="input" />
           <button onclick="updateUserLink('${alias}')">✅ Save</button>
@@ -319,99 +306,45 @@ function fetchUserLinks(uid) {
   });
 }
 
-
 function deleteUserLink(alias) {
   if (!confirm(`Delete the short link "${alias}"?`)) return;
   db.ref(`links/${alias}`).remove()
-    .then(() => {
-      alert("✅ Link deleted.");
-      if (currentUser) fetchUserLinks(currentUser.uid);
-    })
+    .then(() => alert("✅ Link deleted."))
     .catch(err => alert("❌ Error deleting: " + err.message));
 }
 
-
-function showEditForm(alias, password) {
-  document.getElementById(`edit-${alias}`).classList.remove("hidden");
-}
-
-function cancelEdit(alias) {
-  document.getElementById(`edit-${alias}`).classList.add("hidden");
-}
+function showEditForm(alias) { document.getElementById(`edit-${alias}`).style.display = 'block'; }
+function cancelEdit(alias) { document.getElementById(`edit-${alias}`).style.display = 'none'; }
 
 function updateUserLink(oldAlias) {
   const newAlias = document.getElementById(`new-alias-${oldAlias}`).value.trim();
   const newPassword = document.getElementById(`new-pass-${oldAlias}`).value.trim();
-
-  if (!newAlias.match(/^[a-zA-Z0-9_-]+$/)) {
-    return alert("❌ Alias must be alphanumeric with - or _");
-  }
-
+  if (!newAlias.match(/^[a-zA-Z0-9_-]+$/)) return alert("❌ Alias must be alphanumeric with - or _");
   const oldRef = db.ref("links/" + oldAlias);
   const newRef = db.ref("links/" + newAlias);
-
   oldRef.once("value", snapshot => {
-    if (!snapshot.exists()) {
-      return alert("❌ Original link not found");
-    }
-
+    if (!snapshot.exists()) return alert("❌ Original link not found");
     const data = snapshot.val();
     data.password = newPassword || null;
-
     if (oldAlias === newAlias) {
-      // Only password change
-      oldRef.set(data).then(() => {
-        alert("✅ Password updated");
-        fetchUserLinks(currentUser.uid);
-      });
+      oldRef.set(data).then(() => alert("✅ Password updated"));
     } else {
-      // Changing alias
       newRef.once("value", snap => {
-        if (snap.exists()) {
-          return alert("❌ New alias is already taken");
-        }
-
-        newRef.set(data).then(() => {
-          oldRef.remove().then(() => {
-            alert("✅ Alias and password updated");
-            fetchUserLinks(currentUser.uid);
-          });
-        });
+        if (snap.exists()) return alert("❌ New alias is already taken");
+        newRef.set(data).then(() => oldRef.remove().then(() => alert("✅ Alias and password updated")));
       });
     }
   });
 }
 
-function toggleMode() {
-  const body = document.body;
-  const isLight = body.classList.toggle("light-mode");
-  localStorage.setItem("theme", isLight ? "light" : "dark");
-
-  const toggleBtn = document.getElementById("toggleModeBtn");
-  toggleBtn.classList.add("toggle-anim");
-  toggleBtn.textContent = isLight ? "🌙 Dark Mode" : "☀️ Light Mode";
-
-  setTimeout(() => toggleBtn.classList.remove("toggle-anim"), 600);
-}
-
-// On Load, Apply Saved Theme with Animation
-window.addEventListener("DOMContentLoaded", () => {
-  const savedTheme = localStorage.getItem("theme");
-  const toggleBtn = document.getElementById("toggleModeBtn");
-
-  if (savedTheme === "light") {
-    document.body.classList.add("light-mode");
-    toggleBtn.textContent = "🌙 Dark Mode";
-  } else {
-    toggleBtn.textContent = "☀️ Light Mode";
-  }
-});
-
-
 function applyMobileThemeIfNeeded() {
   if (window.innerWidth <= 768) {
     document.body.classList.add("mobile-theme");
+  } else {
+    document.body.classList.remove("mobile-theme");
+    document.body.classList.remove("sidebar-open");
   }
 }
 
 window.addEventListener("DOMContentLoaded", applyMobileThemeIfNeeded);
+window.addEventListener("resize", applyMobileThemeIfNeeded);
