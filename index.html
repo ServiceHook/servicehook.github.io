@@ -20,10 +20,14 @@
 
 </head>
 <body>
-	
-
-
+  <!-- Hamburger Menu (for mobile) -->
+  <button class="hamburger-menu" onclick="toggleSidebar()">
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+  </button>
   
+  <!-- Overlay -->
+  <div id="overlay" onclick="toggleSidebar()"></div>
+
   <!-- Auth bar -->
   <div style="position: fixed; top: 10px; left: 20px; color: white;" id="userIdDisplay">👤 Guest</div>
   <div style="position: fixed; top: 10px; right: 20px;" id="authButtons">
@@ -48,14 +52,16 @@
     </div>
   </div>
   
-  <!-- Sidebar visible only for logged-in users -->
-<div id="sidebar" class="sidebar hidden">
-  <h2>👤 My Links</h2>
-  <p id="userEmail"></p>
-  <hr>
-  <ul id="userLinksList"></ul>
-</div>
-
+  <!-- Sidebar for logged-in users -->
+  <div id="sidebar" class="sidebar">
+    <h2>👤 My Links</h2>
+    <p id="userEmail"></p>
+    <hr>
+    <ul id="userLinksList"></ul>
+    <hr class="sidebar-divider">
+    <!-- Sign out button for mobile convenience -->
+    <button class="button sidebar-signout" onclick="signOut()">🚪 Sign Out</button>
+  </div>
 
   <!-- Main App -->
   <div class="main-container">
@@ -87,8 +93,6 @@
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
-
-	
 
   <script src="/file/script.js"></script>
 
