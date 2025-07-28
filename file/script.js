@@ -336,15 +336,3 @@ function updateUserLink(oldAlias) {
     }
   });
 }
-
-function applyMobileThemeIfNeeded() {
-  if (window.innerWidth <= 768) {
-    document.body.classList.add("mobile-theme");
-  } else {
-    document.body.classList.remove("mobile-theme");
-    document.body.classList.remove("sidebar-open");
-  }
-}
-
-window.addEventListener("DOMContentLoaded", applyMobileThemeIfNeeded);
-window.addEventListener("resize", applyMobileThemeIfNeeded);
