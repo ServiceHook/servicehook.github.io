@@ -2,29 +2,20 @@ export async function onRequest(context) {
   const { request, env } = context;
 
   // =========================================================
-  // 🔓 CORS HEADERS (The Fix)
-  // This tells the browser: "It is okay to talk to this API."
+  // 🔓 CORS HEADERS
   // =========================================================
   const corsHeaders = {
-    "Access-Control-Allow-Origin": "*",  // Allow ANY website to use this
+    "Access-Control-Allow-Origin": "*",
     "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
     "Access-Control-Allow-Headers": "Content-Type, X-API-Key",
   };
 
-  // 1. Handle "Preflight" Check (Browser asks permission first)
   if (request.method === "OPTIONS") {
-    return new Response(null, {
-      status: 204,
-      headers: corsHeaders
-    });
+    return new Response(null, { status: 204, headers: corsHeaders });
   }
 
-  // 2. Only allow POST for the actual logic
   if (request.method !== "POST") {
-    return new Response("Method Not Allowed", { 
-      status: 405, 
-      headers: corsHeaders 
-    });
+    return new Response("Method Not Allowed", { status: 405, headers: corsHeaders });
   }
 
   // =========================================================
@@ -40,7 +31,7 @@ export async function onRequest(context) {
   }
 
   try {
-    // 3. Look up the API Key in Firebase
+    // 1. Authenticate User
     const keyUrl = `${env.FIREBASE_DB_URL}/api_keys/${apiKey}.json?auth=${env.FIREBASE_DB_SECRET}`;
     const keyRes = await fetch(keyUrl);
     const keyData = await keyRes.json();
@@ -52,10 +43,8 @@ export async function onRequest(context) {
       });
     }
 
-    // 4. Check Monthly Limit
+    // 2. Check Limits
     const currentMonth = new Date().getMonth();
-    
-    // Reset if new month
     if (keyData.month !== currentMonth) {
       keyData.usage = 0;
       keyData.month = currentMonth;
@@ -64,37 +53,36 @@ export async function onRequest(context) {
     }
 
     if (keyData.usage >= 50) {
-      return new Response(JSON.stringify({ error: "Monthly limit reached (50/50)" }), { 
+      return new Response(JSON.stringify({ error: "Monthly limit reached" }), { 
         status: 429, 
         headers: { ...corsHeaders, "Content-Type": "application/json" } 
       });
     }
 
-    // 5. Shorten URL
+    // 3. Process URL
     const body = await request.json();
     if (!body.url) {
-        return new Response("Missing URL", { 
-            status: 400, 
-            headers: corsHeaders 
-        });
+        return new Response("Missing URL", { status: 400, headers: corsHeaders });
     }
 
     const slug = body.slug || Math.random().toString(36).substring(2, 8);
     
+    // 4. Save to Main Database (Correct Path: /links/)
     await fetch(`${env.FIREBASE_DB_URL}/links/${slug}.json?auth=${env.FIREBASE_DB_SECRET}`, {
       method: 'PUT',
       body: JSON.stringify({ long_url: body.url, created_at: Date.now(), created_by: keyData.uid })
     });
 
-    // 6. Increment Usage
+    // 5. Update Usage
     await fetch(`${env.FIREBASE_DB_URL}/api_keys/${apiKey}/usage.json?auth=${env.FIREBASE_DB_SECRET}`, {
       method: 'PUT',
       body: keyData.usage + 1
     });
 
+    // 6. Return Response (UPDATED DOMAIN HERE)
     return new Response(JSON.stringify({
       status: "success",
-      short_url: `https://jachu-url-shortener.pages.dev/${slug}`,
+      short_url: `https://jachu.xyz/${slug}`, // <--- CHANGED THIS LINE
       usage: keyData.usage + 1,
       limit: 50
     }), { 
