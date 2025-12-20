@@ -2,123 +2,306 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Developer Dashboard | Jachu</title>
+    <title>Developer Portal | Jachu API</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <style>
-        :root { --primary: #3b82f6; --bg: #0f172a; --card: #1e293b; --text: #f1f5f9; }
-        body { font-family: sans-serif; background: var(--bg); color: var(--text); display: flex; justify-content: center; padding-top: 50px; margin: 0; }
-        
-        .dashboard { background: var(--card); padding: 2rem; border-radius: 12px; width: 100%; max-width: 480px; box-shadow: 0 4px 20px rgba(0,0,0,0.5); text-align: center; }
-        
-        h2 { margin-top: 0; }
-        .hidden { display: none; }
-        
-        /* Key Display Box */
-        .key-box { background: #000; padding: 15px; border-radius: 6px; border: 1px solid #334155; margin: 20px 0; position: relative; word-break: break-all; font-family: monospace; color: #4ade80; }
-        
-        button { background: var(--primary); color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-size: 1rem; width: 100%; margin-top: 10px; }
-        button:hover { opacity: 0.9; }
-        button.logout { background: #ef4444; margin-top: 20px; }
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/file/styles.css" />
 
-        .loader { border: 3px solid #f3f3f3; border-top: 3px solid var(--primary); border-radius: 50%; width: 20px; height: 20px; animation: spin 1s linear infinite; margin: 20px auto; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    <style>
+        /* --- DASHBOARD SPECIFIC STYLES --- */
+        body { padding-top: 80px; align-items: flex-start; }
+        
+        .dash-container {
+            width: 100%; max-width: 900px; margin: 0 auto;
+            display: grid; grid-template-columns: 1fr 1fr; gap: 30px;
+            padding: 20px;
+        }
+
+        .full-width { grid-column: 1 / -1; }
+
+        /* Card Headers */
+        h2 { font-size: 1.5rem; margin-top: 0; color: white; display: flex; align-items: center; gap: 10px; }
+        .badge { 
+            font-size: 0.75rem; background: rgba(99, 102, 241, 0.2); color: #818cf8; 
+            padding: 4px 8px; border-radius: 6px; border: 1px solid rgba(99, 102, 241, 0.3);
+        }
+
+        /* API Key Box */
+        .key-wrapper {
+            position: relative; background: rgba(0,0,0,0.3); border-radius: 12px;
+            border: 1px solid var(--border-color); padding: 15px; margin-top: 15px;
+            display: flex; align-items: center; justify-content: space-between;
+        }
+        .api-key-text {
+            font-family: 'Courier New', monospace; font-size: 1.1rem; color: #4ade80;
+            letter-spacing: 1px; filter: blur(5px); transition: filter 0.3s; cursor: pointer;
+            user-select: none;
+        }
+        .api-key-text.revealed { filter: blur(0); user-select: all; }
+        
+        /* Usage Bar */
+        .usage-track {
+            background: rgba(255,255,255,0.1); height: 10px; width: 100%;
+            border-radius: 5px; margin: 20px 0 10px; overflow: hidden;
+        }
+        .usage-fill {
+            height: 100%; background: linear-gradient(90deg, #6366f1, #a855f7);
+            width: 0%; transition: width 1s ease-in-out;
+        }
+
+        /* Code Blocks */
+        .code-window {
+            background: #0f172a; border-radius: 12px; border: 1px solid var(--border-color);
+            overflow: hidden; margin-top: 15px;
+        }
+        .code-header {
+            background: rgba(255,255,255,0.05); padding: 10px 15px;
+            display: flex; gap: 15px; border-bottom: 1px solid var(--border-color);
+        }
+        .tab {
+            font-size: 0.85rem; color: var(--text-muted); cursor: pointer; padding-bottom: 2px;
+        }
+        .tab.active { color: #fff; border-bottom: 2px solid var(--primary-accent); }
+        
+        pre { margin: 0; padding: 20px; overflow-x: auto; color: #e2e8f0; font-size: 0.9rem; }
+        .token.method { color: #f472b6; }
+        .token.url { color: #4ade80; }
+        .token.header { color: #60a5fa; }
+
+        /* Auth Screen */
+        .auth-overlay {
+            position: fixed; inset: 0; background: var(--bg-dark); z-index: 50;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+        }
+
+        @media (max-width: 768px) {
+            .dash-container { grid-template-columns: 1fr; }
+        }
     </style>
 </head>
 <body>
 
-    <div id="loading" class="loader"></div>
-
-    <div id="login-prompt" class="dashboard hidden">
-        <h2>Access Restricted</h2>
-        <p>Please log in to manage your API keys.</p>
-        <button onclick="window.location.href='index.html'">Go to Login</button>
+    <div id="auth-check" class="auth-overlay">
+        <div class="shortener-box" style="text-align: center; max-width: 400px;">
+            <h2>🔐 Developer Access</h2>
+            <p style="color: var(--text-muted); margin-bottom: 20px;">
+                You must be logged in to access your API keys and documentation.
+            </p>
+            <a href="/index.html" class="button">Log In / Sign Up</a>
+        </div>
     </div>
 
-    <div id="main-dash" class="dashboard hidden">
-        <p style="color: #94a3b8; font-size: 0.9rem;">My Developer Account</p>
-        <h2>API Key Management</h2>
-        
-        <div class="key-box">
-            <span id="apiKeyDisplay">********************************</span>
+    <div class="main-container">
+        <h1 class="title" style="margin-bottom: 10px;">Developer Portal</h1>
+        <p style="text-align: center; color: var(--text-muted); margin-bottom: 40px;">
+            Integrate Jachu shortening into your own applications.
+        </p>
+
+        <div class="dash-container">
+            
+            <div class="shortener-box">
+                <h2>🔑 API Credentials <span class="badge">Active</span></h2>
+                <p style="font-size: 0.9rem; color: var(--text-muted);">
+                    Include this key in the <code>X-API-Key</code> header of your requests. Keep it secret!
+                </p>
+                
+                <div class="key-wrapper">
+                    <span id="apiKeyDisplay" class="api-key-text" onclick="toggleReveal()">
+                        ••••••••••••••••••••••••••••••••
+                    </span>
+                    <button class="button" style="width: auto; padding: 8px 15px; font-size: 0.8rem;" onclick="copyKey()">
+                        Copy
+                    </button>
+                </div>
+
+                <div style="margin-top: 20px;">
+                    <button id="genBtn" class="button" onclick="generateOrRevealKey()">🔄 Loading Key...</button>
+                </div>
+            </div>
+
+            <div class="shortener-box">
+                <h2>📊 Monthly Usage <span class="badge">Free Tier</span></h2>
+                <p style="font-size: 0.9rem; color: var(--text-muted);">
+                    Requests reset on the 1st of every month.
+                </p>
+
+                <div class="usage-track">
+                    <div id="usageBar" class="usage-fill"></div>
+                </div>
+                
+                <div style="display: flex; justify-content: space-between; font-weight: 600;">
+                    <span id="usageCount">0 used</span>
+                    <span style="color: var(--text-muted);">50 limit</span>
+                </div>
+
+                <p style="font-size: 0.8rem; color: #ef4444; margin-top: 15px; display: none;" id="limitWarning">
+                    ⚠️ You have reached your monthly limit.
+                </p>
+            </div>
+
+            <div class="shortener-box full-width">
+                <h2>🚀 Quick Integration</h2>
+                <p style="color: var(--text-muted);">Send a POST request to create a short link.</p>
+
+                <div class="code-window">
+                    <div class="code-header">
+                        <span class="tab active" onclick="showTab('js')">JavaScript (Fetch)</span>
+                        <span class="tab" onclick="showTab('curl')">cURL</span>
+                    </div>
+                    
+                    <div id="code-js">
+<pre><code><span class="token method">const</span> createLink = <span class="token method">async</span> () => {
+  <span class="token method">const</span> res = <span class="token method">await</span> fetch('<span class="token url">https://jachu.xyz/api/create</span>', {
+    method: '<span class="token method">POST</span>',
+    headers: {
+      'Content-Type': 'application/json',
+      '<span class="token header">X-API-Key</span>': '<span style="color:#fca5a5;">YOUR_API_KEY</span>'
+    },
+    body: JSON.stringify({ 
+      url: 'https://example.com/my-long-link',
+      slug: 'custom-alias' <span style="color:#64748b;">// Optional</span>
+    })
+  });
+
+  <span class="token method">const</span> data = <span class="token method">await</span> res.json();
+  console.log(data.short_url);
+};</code></pre>
+                    </div>
+
+                    <div id="code-curl" style="display: none;">
+<pre><code>curl -X <span class="token method">POST</span> <span class="token url">https://jachu.xyz/api/create</span> \
+  -H "Content-Type: application/json" \
+  -H "<span class="token header">X-API-Key</span>: <span style="color:#fca5a5;">YOUR_API_KEY</span>" \
+  -d '{
+    "url": "https://google.com",
+    "slug": "my-google"
+  }'</code></pre>
+                    </div>
+                </div>
+            </div>
+
         </div>
-
-        <p>Monthly Usage: <strong id="usageDisplay">0</strong> / 50</p>
-
-        <button id="revealBtn" onclick="generateOrRevealKey()">Reveal / Generate Key</button>
-        
-        <div style="margin-top: 20px; text-align: left; font-size: 0.85rem; color: #cbd5e1; background: #334155; padding: 10px; border-radius: 6px;">
-            <strong>How to use:</strong><br>
-            POST https://jachu.xyz/api/create<br>
-            Header: <code>X-API-Key: YOUR_KEY</code><br>
-            Body: <code>{ "url": "https://google.com" }</code>
-        </div>
-
-        <button class="logout" onclick="logout()">Sign Out</button>
     </div>
 
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
 
     <script>
-        // 1. YOUR FIREBASE CONFIG
+        // 1. CONFIG
         const firebaseConfig = {
-  apiKey: "AIzaSyBKA3bxy1caa0QiGrn6AihtxufiO7xxTnI",
-  authDomain: "futrshortener-7acf0.firebaseapp.com",
-  databaseURL: "https://futrshortener-7acf0-default-rtdb.firebaseio.com",
-  projectId: "futrshortener-7acf0",
-  storageBucket: "futrshortener-7acf0.firebasestorage.app",
-  messagingSenderId: "863839648409",
-  appId: "1:863839648409:web:d20ae154fe1c9dc1b19608"
-};
+            apiKey: "AIzaSyBKA3bxy1caa0QiGrn6AihtxufiO7xxTnI",
+            authDomain: "futrshortener-7acf0.firebaseapp.com",
+            databaseURL: "https://futrshortener-7acf0-default-rtdb.firebaseio.com",
+            projectId: "futrshortener-7acf0",
+            appId: "1:863839648409:web:d20ae154fe1c9dc1b19608"
+        };
         firebase.initializeApp(firebaseConfig);
         const auth = firebase.auth();
 
-        // 2. CHECK AUTH STATE
+        let currentKey = "";
+
+        // 2. AUTH STATE
         auth.onAuthStateChanged(user => {
-            document.getElementById('loading').classList.add('hidden');
             if (user) {
-                document.getElementById('main-dash').classList.remove('hidden');
-                // You could auto-fetch the usage here if you wanted
+                document.getElementById('auth-check').style.display = 'none';
+                generateOrRevealKey(); 
             } else {
-                document.getElementById('login-prompt').classList.remove('hidden');
+                document.getElementById('auth-check').style.display = 'flex';
             }
         });
 
-        // 3. GENERATE / FETCH KEY
+        // 3. FETCH KEY & REAL USAGE
         async function generateOrRevealKey() {
             const user = auth.currentUser;
             if (!user) return;
 
-            const btn = document.getElementById('revealBtn');
-            btn.innerText = "Loading...";
+            const btn = document.getElementById('genBtn');
+            const keyDisplay = document.getElementById('apiKeyDisplay');
             
-            try {
-                // Get the secure ID token from Firebase
-                const token = await user.getIdToken();
+            btn.innerText = "Syncing...";
+            btn.disabled = true;
 
-                // Send to your Cloudflare Backend
+            try {
+                const token = await user.getIdToken();
+                
+                // Call backend
                 const response = await fetch('/api/generate_key', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ token: token }) // Send token for verification
+                    body: JSON.stringify({ token: token })
                 });
 
                 const data = await response.json();
 
                 if (data.status === 'success') {
-                    document.getElementById('apiKeyDisplay').innerText = data.api_key;
-                    btn.innerText = "Key Visible";
-                    // You might want to fetch usage separately or return it in the generate_key response
+                    // Update Key UI
+                    currentKey = data.api_key;
+                    keyDisplay.innerText = currentKey; 
+                    btn.style.display = 'none';
+                    
+                    // Update Usage UI with REAL data from backend
+                    updateUsageUI(data.usage, data.limit);
+
                 } else {
                     alert("Error: " + data.error);
+                    btn.innerText = "Retry";
+                    btn.disabled = false;
                 }
             } catch (e) {
-                alert("Network error");
+                console.error(e);
+                alert("Network error.");
+                btn.innerText = "Retry";
+                btn.disabled = false;
             }
         }
 
-        function logout() {
-            auth.signOut().then(() => window.location.reload());
+        function updateUsageUI(usage, limit) {
+            usage = usage || 0;
+            limit = limit || 50;
+            
+            const percent = Math.min((usage / limit) * 100, 100);
+            
+            document.getElementById('usageCount').innerText = `${usage} used`;
+            document.getElementById('usageBar').style.width = `${percent}%`;
+            
+            // Visual warning if limit reached
+            if(usage >= limit) {
+                document.getElementById('usageBar').style.background = '#ef4444';
+                document.getElementById('limitWarning').style.display = 'block';
+            } else {
+                // Reset colors if under limit (in case of month reset)
+                document.getElementById('usageBar').style.background = 'linear-gradient(90deg, #6366f1, #a855f7)';
+                document.getElementById('limitWarning').style.display = 'none';
+            }
+        }
+
+        // 4. UI INTERACTIONS
+        function toggleReveal() {
+            document.getElementById('apiKeyDisplay').classList.toggle('revealed');
+        }
+
+        function copyKey() {
+            if(!currentKey) return;
+            navigator.clipboard.writeText(currentKey).then(() => {
+                const btn = document.querySelector('.key-wrapper button');
+                const oldText = btn.innerText;
+                btn.innerText = "Copied!";
+                btn.style.background = "#22c55e";
+                setTimeout(() => {
+                    btn.innerText = oldText;
+                    btn.style.background = "";
+                }, 2000);
+            });
+        }
+
+        function showTab(tab) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelector(`.tab[onclick="showTab('${tab}')"]`).classList.add('active');
+            
+            document.getElementById('code-js').style.display = tab === 'js' ? 'block' : 'none';
+            document.getElementById('code-curl').style.display = tab === 'curl' ? 'block' : 'none';
         }
     </script>
 </body>

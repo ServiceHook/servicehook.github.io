@@ -1,68 +1,117 @@
-
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <!-- Google tag (gtag.js) -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=AW-17389391134"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-
-  gtag('config', 'AW-17389391134');
-</script>
-  <meta name="google-adsense-account" content="ca-pub-5931219908100170">
   <meta charset="UTF-8" />
-  <title>Wait To Redirection</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Jachu | Redirecting...</title>
+  
+  <script async src="https://www.googletagmanager.com/gtag/js?id=AW-17389391134"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'AW-17389391134');
+  </script>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  
+  <style>
+    /* ===== PRO THEME VARIABLES ===== */
+    :root {
+      --bg-dark: #020617;
+      --card-bg: rgba(15, 23, 42, 0.6);
+      --primary-accent: #6366f1;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --danger: #ef4444;
+      --success: #22c55e;
+    }
+
+    body {
+      margin: 0; height: 100vh;
+      font-family: 'Inter', sans-serif;
+      background-color: var(--bg-dark);
+      /* Mesh Background */
+      background-image: 
+        radial-gradient(at 0% 0%, hsla(253,16%,7%,1) 0, transparent 50%), 
+        radial-gradient(at 50% 0%, hsla(225,39%,30%,1) 0, transparent 50%), 
+        radial-gradient(at 100% 0%, hsla(339,49%,30%,1) 0, transparent 50%);
+      background-size: cover;
+      color: var(--text-main);
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+    }
+
+    /* ===== GLASS CARD ===== */
+    .redirect-card {
+      background: var(--card-bg);
+      backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      padding: 40px; border-radius: 24px;
+      width: 90%; max-width: 420px;
+      text-align: center;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+      animation: fadeIn 0.5s ease-out;
+    }
+
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+    /* ===== SPINNER ===== */
+    .spinner {
+      width: 50px; height: 50px; margin: 0 auto 20px;
+      border: 4px solid rgba(255,255,255,0.1);
+      border-top: 4px solid var(--primary-accent);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+    /* ===== TYPOGRAPHY ===== */
+    h2 { font-size: 1.5rem; margin: 0 0 10px; font-weight: 700; }
+    p { color: var(--text-muted); font-size: 0.95rem; margin: 0; line-height: 1.5; }
+
+    /* ===== PASSWORD UI ===== */
+    .input-group { margin-top: 20px; display: none; }
+    
+    input {
+      width: 100%; padding: 14px; margin-bottom: 12px;
+      background: rgba(30, 41, 59, 0.5);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 12px; color: white; font-size: 1rem; text-align: center;
+      transition: 0.3s;
+    }
+    input:focus { outline: none; border-color: var(--primary-accent); background: rgba(30, 41, 59, 0.8); }
+
+    button {
+      width: 100%; padding: 14px;
+      background: var(--primary-accent); color: white;
+      border: none; border-radius: 12px;
+      font-size: 1rem; font-weight: 600; cursor: pointer;
+      transition: 0.2s;
+    }
+    button:hover { background: #4f46e5; transform: translateY(-2px); }
+
+    /* ===== STATUS MESSAGES ===== */
+    #status { margin-top: 15px; font-size: 0.9rem; min-height: 20px; }
+  </style>
+  
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="robots" content="noindex, nofollow" />
-
-  <style>
-    body {
-      margin: 0;
-      height: 100vh;
-      font-family: 'Segoe UI', sans-serif;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      background: #0f172a;
-      color: #e2e8f0;
-    }
-
-    .dual-ring {
-      width: 60px;
-      height: 60px;
-      border: 6px solid transparent;
-      border-top: 6px solid #38bdf8;
-      border-bottom: 6px solid #8b5cf6;
-      border-radius: 50%;
-      animation: spin-glow 1s linear infinite;
-      margin-bottom: 20px;
-      box-shadow: 0 0 10px #38bdf8;
-    }
-
-    @keyframes spin-glow {
-      to { transform: rotate(360deg); }
-    }
-
-    .msg {
-      font-size: 18px;
-      text-align: center;
-      max-width: 90%;
-    }
-
-    input, button {
-      font-family: inherit;
-    }
-  </style>
 </head>
 <body>
 
-  <div class="dual-ring"></div>
-  <div class="msg">Hold on, redirecting... 🚀<br>Stay happy and safe. ~ Jachu</div>
+  <div class="redirect-card">
+    <div class="spinner" id="loader"></div>
+    <h2 id="title">Redirecting</h2>
+    <p id="message">Please wait while we take you to your destination...</p>
+
+    <div id="passwordSection" class="input-group">
+      <input type="password" id="pwInput" placeholder="Enter Link Password" autofocus />
+      <button onclick="checkPassword()">Unlock Link 🔓</button>
+    </div>
+    
+    <p id="status"></p>
+  </div>
 
   <script>
     const firebaseConfig = {
@@ -70,92 +119,105 @@
       authDomain: "futrshortener-7acf0.firebaseapp.com",
       databaseURL: "https://futrshortener-7acf0-default-rtdb.firebaseio.com",
       projectId: "futrshortener-7acf0",
-      storageBucket: "futrshortener-7acf0.appspot.com",
-      messagingSenderId: "863839648409",
       appId: "1:863839648409:web:d20ae154fe1c9dc1b19608"
     };
 
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
+    // Get alias from URL path (e.g. jachu.xyz/alias)
     const alias = window.location.pathname.replace("/", "").trim();
 
-    const showError = (msg) => {
-      document.body.innerHTML = `<h2 style="color: #f87171; text-align: center;">❌ ${msg}</h2>`;
+    const ui = {
+      loader: document.getElementById('loader'),
+      title: document.getElementById('title'),
+      msg: document.getElementById('message'),
+      pwSection: document.getElementById('passwordSection'),
+      status: document.getElementById('status')
     };
 
-if (!alias) {
-  showError("❌ No link created using this alias.");
-} else {
+    function showError(text) {
+      ui.loader.style.display = 'none';
+      ui.title.innerText = "Link Not Found";
+      ui.title.style.color = "var(--danger)";
+      ui.msg.innerText = text;
+      ui.msg.style.color = "#fca5a5";
+    }
+
+    if (!alias) {
+      showError("No alias provided. Please check the URL.");
+    } else {
       db.ref("links/" + alias).once("value").then(snapshot => {
-        if (!snapshot.exists()) return showError("Link not found.");
+        if (!snapshot.exists()) return showError("This short link does not exist.");
 
         const data = snapshot.val();
         const { url, password, expiresAt } = data;
 
+        // Check Expiry
+        if (expiresAt && Date.now() > expiresAt) {
+          return showError("This link has expired.");
+        }
+
         if (!url) return showError("Invalid redirection target.");
 
-        const now = Date.now();
-        if (expiresAt && now > expiresAt) return showError("⏳ Link has expired.");
-
-        const recordClickAndRedirect = () => {
+        // Define Redirection Logic
+        const proceed = () => {
+          ui.title.innerText = "Target Verified";
+          ui.msg.innerText = "Redirecting you now...";
+          ui.status.style.color = "var(--success)";
+          
+          // Analytics (Fire & Forget)
           fetch("https://ipapi.co/json/")
             .then(res => res.json())
             .then(ip => {
-              const clickData = {
+              db.ref(`clicks/${alias}`).push({
                 timestamp: firebase.database.ServerValue.TIMESTAMP,
-                country: ip.country_name,
-                region: ip.region,
-                city: ip.city,
-                ip: ip.ip,
+                country: ip.country_name || 'Unknown',
+                city: ip.city || 'Unknown',
+                ip: ip.ip || 'Anonymized',
                 device: navigator.userAgent
-              };
-              db.ref(`clicks/${alias}`).push(clickData).finally(() => {
-                setTimeout(() => window.location.href = url, 1000);
               });
             })
-            .catch(() => {
-              setTimeout(() => window.location.href = url, 1000);
+            .finally(() => {
+              window.location.replace(url);
             });
+            
+          // Fallback redirect if API fails
+          setTimeout(() => window.location.replace(url), 1500);
         };
 
-        if (!password || password === "null") {
-          recordClickAndRedirect();
-        } else {
-          document.body.innerHTML = `
-            <div style="display: flex; justify-content: center; align-items: center; height: 100vh; flex-direction: column;">
-              <h2 style="color: #38bdf8; margin-bottom: 10px;">🔐 Protected Link</h2>
-              <input type="password" id="pwInput" placeholder="Enter password" style="padding: 10px; font-size: 16px; width: 250px; background: #1e293b; color: #fff; border: 1px solid #334155; border-radius: 5px; margin-bottom: 10px;" autofocus />
-              <button onclick="checkPassword()" style="padding: 10px 20px; background: #3b82f6; color: #fff; border: none; border-radius: 5px; font-weight: bold;">Unlock</button>
-              <p id="status" style="margin-top: 10px; color: #f87171;"></p>
-            </div>
-          `;
+        // Handle Password
+        if (password && password !== "null") {
+          ui.loader.style.display = 'none';
+          ui.title.innerText = "Secured Link";
+          ui.msg.innerText = "This link is password protected.";
+          ui.pwSection.style.display = 'block';
 
-          window.checkPassword = function () {
-            const userPw = document.getElementById("pwInput").value.trim();
-            const status = document.getElementById("status");
-
-            if (userPw === password) {
-              status.style.color = "#4ade80";
-              status.innerText = "✅ Password correct. Redirecting...";
-              recordClickAndRedirect();
+          window.checkPassword = function() {
+            const input = document.getElementById("pwInput");
+            if (input.value === password) {
+              ui.pwSection.style.display = 'none';
+              ui.loader.style.display = 'block';
+              proceed();
             } else {
-              status.style.color = "#f87171";
-              status.innerText = "❌ Incorrect password.";
+              ui.status.innerText = "❌ Incorrect password";
+              ui.status.style.color = "var(--danger)";
+              input.classList.add('shake');
+              setTimeout(() => input.classList.remove('shake'), 300);
             }
           };
-
-          document.addEventListener("keydown", e => {
-            if (e.key === "Enter") {
-              if (typeof checkPassword === "function") checkPassword();
-            }
+          
+          // Enter key support
+          document.getElementById("pwInput").addEventListener("keypress", (e) => {
+             if(e.key === 'Enter') checkPassword();
           });
+
+        } else {
+          // No password, go immediately
+          proceed();
         }
       });
     }
   </script>
-  <script
-  src='https://cdn.jotfor.ms/agent/embedjs/0197fa7374c97c9fade854e7f577b1bedcde/embed.js?skipWelcome=1&maximizable=1'>
-</script>
 </body>
 </html>

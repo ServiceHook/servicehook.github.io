@@ -2,70 +2,104 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>FutrEngine Admin Panel</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin Panel | Jachu</title>
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="stylea.css" />
+  
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
-  
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
-  <!-- Login Section -->
+
   <div id="loginSection">
-    <h2>Admin Login</h2>
-    <input type="text" id="username" placeholder="Email" class="input" />
-    <input type="password" id="password" placeholder="Password" class="input" />
-    <button onclick="login()" class="button">Login</button>
-    <p id="loginError"></p>
+    <div class="login-card">
+      <h2>🔐 Admin Access</h2>
+      <input type="text" id="username" placeholder="Admin Email" class="input" />
+      <input type="password" id="password" placeholder="Password" class="input" />
+      <button onclick="login()" class="button" style="width: 100%;">Login to Dashboard</button>
+      <p id="loginError" style="color: #ef4444; margin-top: 15px; font-size: 0.9rem;"></p>
+    </div>
   </div>
 
-  <!-- Admin Panel (hidden by default) -->
   <div id="adminContent" style="display: none;">
+    
     <div class="sidebar">
-      <h1>FutrEngine</h1>
+      <h1>⚡ Jachu Admin</h1>
       <ul>
-        <li onclick="switchSection('dashboard')">📊 Dashboard</li>
-        <li onclick="switchSection('manage')">🔗 Manage URLs</li>
-        <li onclick="switchSection('ban')">🚫 Ban/Unban</li>
-        <li onclick="logout()">🚪 Logout</li>
+        <li onclick="switchSection('dashboard')" id="nav-dashboard" class="active">📊 Dashboard</li>
+        <li onclick="switchSection('manage')" id="nav-manage">🔗 Manage Links</li>
+        <li onclick="switchSection('ban')" id="nav-ban">🚫 Banned Users</li>
+        <li onclick="logout()" style="margin-top: auto; color: #ef4444;">🚪 Logout</li>
       </ul>
     </div>
 
     <div class="main">
-      <!-- Dashboard Section -->
-      <div id="dashboard" class="section hidden">
-        <h2>📊 Dashboard</h2>
-        <p><strong>Today's Links:</strong> <span id="todayCount">0</span></p>
-        <p><strong>Total Links:</strong> <span id="totalCount">0</span></p>
-        <h3>🕓 Last 5 Links</h3>
-        <ul id="lastLinks"></ul>
+      
+      <div id="dashboard" class="section">
+        <h2 style="margin-bottom: 20px;">Overview</h2>
+        
+        <div class="stats-grid">
+          <div class="stat-card">
+            <h3>Total Links</h3>
+            <p id="totalCount">0</p>
+          </div>
+          <div class="stat-card">
+            <h3>Created Today</h3>
+            <p id="todayCount" style="color: #4ade80;">0</p>
+          </div>
+        </div>
+
+        <div class="stat-card" style="margin-bottom: 30px; border: 1px solid var(--border-color);">
+          <h3 style="margin-bottom: 15px;">📈 Growth (Last 7 Days)</h3>
+          <div style="height: 300px;">
+            <canvas id="growthChart"></canvas>
+          </div>
+        </div>
+
+        <h3>🕓 Recently Created</h3>
+        <ul id="lastLinks" style="list-style: none; padding: 0;"></ul>
       </div>
 
-      <!-- Manage URLs Section -->
       <div id="manage" class="section hidden">
-        <h2>🔗 Manage URLs</h2>
-        <button onclick="loadLinks()" class="button">🔁 Refresh</button>
-		<input type="text" id="searchInput" oninput="searchLinks()" placeholder="Search alias or URL..." class="input" style="max-width: 300px; margin-bottom: 10px;" />
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+          <h2>All Links</h2>
+          <div style="display: flex; gap: 10px;">
+             <input type="text" id="searchInput" oninput="searchLinks()" placeholder="Search alias or URL..." class="input" style="width: 250px; margin-bottom: 0;" />
+             <button onclick="loadLinks()" class="button">Refresh</button>
+          </div>
+        </div>
 
         <table id="urlTable">
           <thead>
-            <tr><th>Alias</th><th>URL</th><th>Clicks</th><th>Actions</th></tr>
+            <tr>
+              <th width="150">Alias</th>
+              <th>Target URL</th>
+              <th width="80">Clicks</th>
+              <th width="120">Actions</th>
+            </tr>
           </thead>
           <tbody></tbody>
         </table>
+
         <div class="pagination">
-          <button onclick="showPrevBatch()" class="button">⬅ Prev</button>
-          <span id="pageInfo">Page 1</span>
-          <button onclick="showNextBatch()" class="button">Next ➡</button>
+          <button onclick="showPrevBatch()" class="button btn-sm">⬅ Prev</button>
+          <span id="pageInfo" style="color: var(--text-muted); font-size: 0.9rem;">Page 1</span>
+          <button onclick="showNextBatch()" class="button btn-sm">Next ➡</button>
         </div>
       </div>
 
-      <!-- Ban Section -->
       <div id="ban" class="section hidden">
-        <h2>🚫 Banned Users</h2>
-        <p>Click "🚫 Ban" in Manage URLs to block users by email</p>
-        <ul id="bannedList"></ul>
+        <h2>🚫 Restricted Users</h2>
+        <p style="color: var(--text-muted); margin-bottom: 20px;">Users in this list cannot log in or create links.</p>
+        <ul id="bannedList" style="list-style: none; padding: 0;"></ul>
       </div>
+
     </div>
   </div>
 

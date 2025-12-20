@@ -3,182 +3,117 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Legal & Policy Pages – jachu Shortener</title>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+  <title>Legal & Policies | Jachu</title>
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/file/styles.css" />
+  
   <style>
-    body {
-      font-family: 'Inter', sans-serif;
-      background: #0f172a; /* Dark background */
-      color: #e2e8f0; /* Light text color */
-      line-height: 1.6;
-      margin: 0;
-      padding: 20px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      min-height: 100vh;
+    /* Legal Page Specific Overrides */
+    body { padding-top: 100px; align-items: flex-start; }
+    .legal-container { width: 100%; max-width: 800px; padding: 20px; margin: 0 auto; }
+    
+    .legal-nav {
+      display: flex; gap: 15px; margin-bottom: 30px; flex-wrap: wrap; justify-content: center;
     }
-    header {
-      background: #1e293b;
-      padding: 20px;
-      text-align: center;
-      border-radius: 8px;
-      margin-bottom: 30px;
-      width: 100%;
-      max-width: 900px;
-      box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+    .legal-nav a {
+      color: var(--text-muted); text-decoration: none; font-size: 0.9rem; padding: 8px 15px;
+      border-radius: 20px; background: rgba(255,255,255,0.05); transition: 0.2s;
     }
-    header h1 {
-      color: #38bdf8;
-      font-size: 28px;
-      margin-bottom: 15px;
+    .legal-nav a:hover, .legal-nav a.active {
+      background: var(--primary-accent); color: white;
     }
-    nav {
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: center;
-      gap: 15px;
+    
+    .section-card {
+      background: var(--card-bg); backdrop-filter: blur(20px);
+      border: 1px solid var(--border-color); border-radius: 24px;
+      padding: 40px; margin-bottom: 30px;
     }
-    nav a {
-      color: #8b5cf6; /* Purple link color */
-      text-decoration: none;
-      font-weight: 600;
-      padding: 8px 15px;
-      border-radius: 5px;
-      transition: background 0.2s ease, color 0.2s ease;
-    }
-    nav a:hover {
-      background: #38bdf8; /* Blue on hover */
-      color: #1e293b;
-      text-decoration: none;
-    }
-    section {
-      background: #1e293b;
-      padding: 30px;
-      border-radius: 12px;
-      margin-bottom: 30px;
-      width: 100%;
-      max-width: 900px;
-      box-shadow: 0 5px 15px rgba(0,0,0,0.3);
-    }
-    h2 {
-      color: #38bdf8; /* Blue heading */
-      margin-top: 0;
-      font-size: 24px;
-      margin-bottom: 15px;
-    }
-    h3 {
-      color: #8b5cf6; /* Purple subheading */
-      margin-top: 0;
-      font-size: 20px;
-      margin-bottom: 10px;
-    }
-    p {
-      margin-bottom: 1em;
-    }
-    a {
-      color: #8b5cf6;
-      text-decoration: underline;
-    }
-    a:hover {
-      text-decoration: none;
-    }
-    strong {
-      color: #e2e8f0;
-    }
-
-    @media (max-width: 768px) {
-      body {
-        padding: 15px;
-      }
-      header, section {
-        padding: 20px;
-      }
-      header h1 {
-        font-size: 24px;
-      }
-      h2 {
-        font-size: 20px;
-      }
-      h3 {
-        font-size: 18px;
-      }
-      nav a {
-        padding: 6px 10px;
-        font-size: 14px;
-      }
-    }
+    
+    h2 { color: white; border-bottom: 1px solid var(--border-color); padding-bottom: 15px; margin-top: 0; }
+    h3 { color: var(--primary-accent); margin-top: 25px; font-size: 1.1rem; }
+    p { line-height: 1.7; color: var(--text-muted); margin-bottom: 15px; }
+    ul { color: var(--text-muted); line-height: 1.7; padding-left: 20px; }
+    li { margin-bottom: 8px; }
   </style>
 </head>
 <body>
-  <header>
-    <h1>jachu Shortener – Legal & Policy Pages</h1>
-    <nav>
+
+  <div id="authButtons">
+    <a href="/index.html" class="button" style="background: transparent; border: none; box-shadow: none;">← Back to Home</a>
+  </div>
+
+  <div class="legal-container">
+    <h1 class="title" style="margin-bottom: 10px;">Legal Center</h1>
+    <p style="text-align: center; color: var(--text-muted); margin-bottom: 40px;">Transparency is our core value.</p>
+
+    <div class="legal-nav">
       <a href="#about">About Us</a>
-      <a href="#contact">Contact Us</a>
+      <a href="#terms">Terms of Service</a>
       <a href="#privacy">Privacy Policy</a>
-      <a href="#terms">Terms & Conditions</a>
-      <a href="#refund">Cancellation & Refund Policy</a>
-      <a href="#delivery">Digital Delivery Policy</a>
-    </nav>
-  </header>
+      <a href="#refund">Refund Policy</a>
+      <a href="#contact">Contact</a>
+    </div>
 
-  <section id="about">
-    <h2>About Us</h2>
-    <p>jachu Shortener is a fast, secure, and smart URL shortening platform designed for creators, students, developers, and everyday users.</p>
-    <p>We believe links should be simple, trackable, and clutter-free. Founded in 2024, we’ve helped thousands of users simplify their URLs and track analytics with ease.</p>
-    <p>From personalized short links to analytics and QR code sharing – we’re here to level up your links.</p>
-    <p>Powered by Firebase, secured by design.</p>
-  </section>
+    <div id="about" class="section-card">
+      <h2>🚀 About Jachu</h2>
+      <p>Jachu is a next-generation URL shortening infrastructure designed for developers, marketers, and creators. Built on the Cloudflare Edge Network, we ensure your links are fast, secure, and always online.</p>
+      <p>We are dedicated to providing a clutter-free, privacy-focused experience without intrusive tracking or ads.</p>
+    </div>
 
-  <section id="contact">
-    <h2>Contact Us</h2>
-    <p>We’d love to hear from you! Whether it's feedback, questions, or support — we're always here.</p>
-    <h3>Email:</h3>
-    <p><strong>mail@jachu.xyz</strong></p>
-    <h3>Phone:</h3>
-    <p>+91-6282829338 (Mon–Sat, 10 AM – 6 PM IST)</p>
-    <h3>Business Address:</h3>
-    <p>Kanhangad, Kasaragod, Kerala - 671316 India</p>
-    <h3>Need urgent help?</h3>
-    <p>DM us on Instagram: <strong>@kammu.in</strong></p>
-  </section>
+    <div id="terms" class="section-card">
+      <h2>⚖️ Terms of Service</h2>
+      <p><strong>Effective Date:</strong> July 24, 2025</p>
+      
+      <h3>1. Acceptance of Terms</h3>
+      <p>By accessing and using Jachu, you accept and agree to be bound by the terms and provision of this agreement.</p>
+      
+      <h3>2. Prohibited Use</h3>
+      <p>You agree not to use the service for:</p>
+      <ul>
+        <li>Spamming or unsolicited bulk messaging.</li>
+        <li>Illegal activities, phishing, or malware distribution.</li>
+        <li>Content that promotes hate speech, violence, or discrimination.</li>
+      </ul>
+      <p>We reserve the right to disable any link and ban any user found violating these terms without notice.</p>
+    </div>
 
-  <section id="privacy">
-    <h2>Privacy Policy</h2>
-    <p><strong>Effective Date:</strong> 24/07/2025</p>
-    <p>At jachu Shortener, your privacy is our priority. We collect and store your name, email, and transaction details (if applicable) only to fulfill service delivery and enhance your experience. We never sell or share your data with third parties, except as required by law or to provide our services (e.g., through Firebase).</p>
-    <p>We may use cookies and basic analytics (like Google Analytics) to improve site performance, understand user behavior, and serve relevant advertisements. By using our services, you agree to our data practices.</p>
-    <p>You can reach us at <a href="mailto:mail@jachu.xyz">mail@jachu.xyz</a> to access, update, or delete your information.</p>
-  </section>
+    <div id="privacy" class="section-card">
+      <h2>🔒 Privacy Policy</h2>
+      <p>Your privacy is paramount. Here is exactly what we track:</p>
+      
+      <h3>Information We Collect</h3>
+      <ul>
+        <li><strong>Link Data:</strong> The original URL and the short alias you create.</li>
+        <li><strong>Analytics:</strong> Anonymous click data (Country, City, Device Type) to provide you with stats.</li>
+        <li><strong>Account Info:</strong> Your email address (if you sign up) to manage your links.</li>
+      </ul>
+      
+      <h3>Data Sharing</h3>
+      <p>We do <strong>not</strong> sell your personal data to third parties. We use industry-standard encryption for all data transmission.</p>
+    </div>
 
-  <section id="terms">
-    <h2>Terms & Conditions</h2>
-    <p><strong>Effective Date:</strong> 24/07/2025</p>
-    <p>By using jachu Shortener, you agree to be bound by these Terms and Conditions. Please read them carefully before using our services.</p>
-    <h3>1. Services</h3>
-    <p>We offer a URL shortening service that allows you to create short, customizable links and track their usage. Our services are intended for personal and professional use and cannot be used for illegal, fraudulent, or abusive activities.</p>
-    <h3>2. Payment (if applicable)</h3>
-    <p>All payments made through our platform are processed securely via cashfree. By making a payment, you agree to cashfree's terms and our refund policy.</p>
-    <h3>3. User Conduct</h3>
-    <p>Users must not misuse our services. Any fraudulent, abusive, or illegal activity, including but not limited to linking to malware, phishing sites, or engaging in spam, will lead to immediate termination of service and potential reporting to relevant authorities.</p>
-    <h3>4. Changes</h3>
-    <p>We may update these terms anytime. Continued use of our website implies agreement with the updated terms.</p>
-    <p>If you have any questions, contact us at: <strong>mail@jachu.xyz</strong></p>
-  </section>
+    <div id="refund" class="section-card">
+      <h2>💸 Refund & Cancellation</h2>
+      <p><strong>Digital Services:</strong> Since our premium features (if applicable) are digital and instantly activated, we generally do not offer refunds once the service has been delivered.</p>
+      <p>However, if you believe you were charged in error, please contact us within 24 hours.</p>
+    </div>
 
-  <section id="refund">
-    <h2>Cancellation & Refund Policy</h2>
-    <p><strong>Effective Date:</strong> 24/07/2025</p>
-    <p>Due to the nature of digital services, once a service (e.g., premium link features) is delivered, it cannot be canceled or refunded.</p>
-    <p>If you believe there’s a mistake or non-delivery of service, please email <a href="mailto:mail@jachu.xyz">mail@jachu.xyz</a> within 24 hours with your payment ID and issue. We will investigate and respond within 3 business days.</p>
-  </section>
+    <div id="contact" class="section-card">
+      <h2>📞 Contact Us</h2>
+      <p>Have questions? We're here to help.</p>
+      <p>
+        <strong>Email:</strong> <a href="mailto:mail@jachu.xyz" style="color:var(--primary-accent);">mail@jachu.xyz</a><br>
+        <strong>Support Hours:</strong> Mon–Sat, 10 AM – 6 PM IST
+      </p>
+      <p><strong>Address:</strong><br>Kanhangad, Kasaragod, Kerala - 671316, India</p>
+    </div>
+    
+    <div style="text-align: center; color: var(--border-color); margin-bottom: 50px;">
+      &copy; 2025 Jachu. All rights reserved.
+    </div>
 
-  <section id="delivery">
-    <h2>Digital Delivery Policy</h2>
-    <p><strong>Effective Date:</strong> 24/07/2025</p>
-    <p>All services on jachu Shortener are digital. No physical products will be shipped. Access to features will be granted immediately upon successful payment or within 1 hour.</p>
-    <p>If there's any delay, contact us with your transaction details.</p>
-  </section>
+  </div>
 </body>
 </html>

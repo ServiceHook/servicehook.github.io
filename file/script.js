@@ -14,43 +14,35 @@ const auth = firebase.auth();
 
 let currentUser = null;
 
-/**
- * Toggles the sidebar visibility by adding/removing a class from the body.
- */
-function toggleSidebar() {
-  document.body.classList.toggle("sidebar-open");
-}
-
+// --- AUTH STATE LISTENER ---
 auth.onAuthStateChanged(user => {
   currentUser = user;
   const body = document.body;
-
-  // Clear previous state
-  body.classList.remove("logged-in", "sidebar-open");
-
+  const userDisplay = document.getElementById("userIdDisplay");
+  const authButtons = document.querySelector('#authButtons');
+  
   if (user) {
-    // User is logged in
-    body.classList.add("logged-in");
-    document.getElementById("userIdDisplay").textContent = `👤 ${user.email || user.uid}`;
-    document.querySelector('#authButtons button[onclick="toggleAuthModal()"]').style.display = "none";
-    document.querySelector('#authButtons button[onclick="signOut()"]').style.display = "inline-block";
+    // Logged In
+    userDisplay.innerHTML = `👋 Hi, ${user.email.split('@')[0]}`;
+    document.querySelector('button[onclick="toggleAuthModal()"]').style.display = "none";
+    document.querySelector('button[onclick="signOut()"]').style.display = "inline-block";
     
-    // Populate and fetch links for the sidebar
+    // Sidebar data
     document.getElementById("userEmail").textContent = user.email;
     fetchUserLinks(user.uid);
   } else {
-    // User is a guest
-    document.getElementById("userIdDisplay").textContent = "👤 Guest";
-    document.querySelector('#authButtons button[onclick="toggleAuthModal()"]').style.display = "inline-block";
-    document.querySelector('#authButtons button[onclick="signOut()"]').style.display = "none";
+    // Guest
+    userDisplay.innerHTML = "";
+    document.querySelector('button[onclick="toggleAuthModal()"]').style.display = "inline-block";
+    document.querySelector('button[onclick="signOut()"]').style.display = "none";
     
-    // Clear sidebar content
+    // Clear sidebar
     document.getElementById("userLinksList").innerHTML = "";
-    document.getElementById("userEmail").textContent = "";
+    document.getElementById("userEmail").textContent = "Please log in to see your links.";
   }
 });
 
-
+// --- AUTH ACTIONS ---
 function toggleAuthModal() {
   const modal = document.getElementById("authModal");
   modal.style.display = modal.style.display === "flex" ? "none" : "flex";
@@ -59,292 +51,267 @@ function toggleAuthModal() {
 function signUp() {
   const email = document.getElementById("email").value.trim();
   const password = document.getElementById("password").value;
-  const signupBtn = document.getElementById("signupBtn");
-
-  signupBtn.classList.add("loading");
-
+  const btn = document.getElementById("signupBtn");
+  btn.innerText = "Creating...";
+  
   auth.createUserWithEmailAndPassword(email, password)
-    .then(() => {
-      signupBtn.classList.remove("loading");
-      toggleAuthModal();
-    })
-    .catch(err => {
-      signupBtn.classList.remove("loading");
-      alert("❌ " + err.message);
-    });
+    .then(() => { toggleAuthModal(); btn.innerText = "Create Account"; })
+    .catch(err => { alert(err.message); btn.innerText = "Create Account"; });
 }
-
 
 function signIn() {
   const email = document.getElementById("email").value.trim();
   const password = document.getElementById("password").value;
-  const loginBtn = document.getElementById("loginBtn");
-
-  loginBtn.classList.add("loading");
+  const btn = document.getElementById("loginBtn");
+  btn.innerText = "Logging in...";
 
   auth.signInWithEmailAndPassword(email, password)
-    .then(() => {
-      loginBtn.classList.remove("loading");
-      toggleAuthModal();
-    })
-    .catch(err => {
-      loginBtn.classList.remove("loading");
-      alert("❌ " + err.message);
-    });
+    .then(() => { toggleAuthModal(); btn.innerText = "Log In"; })
+    .catch(err => { alert(err.message); btn.innerText = "Log In"; });
 }
 
 function signOut() {
-  auth.signOut()
-    .then(() => {
-      alert("👋 Signed out successfully.");
-      location.reload(); // refresh the page
-    })
-    .catch(err => {
-      alert("❌ Error signing out: " + err.message);
-    });
+  auth.signOut().then(() => { location.reload(); });
 }
 
 function resetPassword() {
   const email = document.getElementById("email").value.trim();
-  if (!email) return alert("❌ Please enter your email above.");
-
+  if (!email) return alert("Please enter your email address first.");
   auth.sendPasswordResetEmail(email)
-    .then(() => {
-      alert("📩 Password reset email sent! Check your inbox.");
-      startResetCooldown();
-    })
-    .catch(err => alert("❌ " + err.message));
+    .then(() => alert("Reset link sent to your email."))
+    .catch(err => alert(err.message));
 }
 
-// --- Helper functions for UI and logic ---
-
-document.getElementById("email").addEventListener("input", () => {
-  const emailInput = document.getElementById("email").value.trim();
-  const resetBtn = document.getElementById("resetBtn");
-  if (!resetBtn.dataset.cooldown && emailInput.length > 0) {
-    resetBtn.disabled = false;
-    resetBtn.style.opacity = "1";
-    resetBtn.style.cursor = "pointer";
-  } else if (emailInput.length === 0) {
-    resetBtn.disabled = true;
-    resetBtn.style.opacity = "0.5";
-    resetBtn.style.cursor = "not-allowed";
-  }
-});
-
-function startResetCooldown() {
-  const resetBtn = document.getElementById("resetBtn");
-  let cooldown = 60;
-  resetBtn.disabled = true;
-  resetBtn.dataset.cooldown = "true";
-  resetBtn.style.opacity = "0.5";
-  resetBtn.style.cursor = "not-allowed";
-  const originalText = "🔁 Reset Password";
-  const interval = setInterval(() => {
-    resetBtn.textContent = `⏳ Retry in ${cooldown--}s...`;
-    if (cooldown < 0) {
-      clearInterval(interval);
-      delete resetBtn.dataset.cooldown;
-      const emailInput = document.getElementById("email").value.trim();
-      if (emailInput.length > 0) {
-        resetBtn.disabled = false;
-        resetBtn.style.opacity = "1";
-        resetBtn.style.cursor = "pointer";
-      }
-      resetBtn.textContent = originalText;
-    }
-  }, 1000);
-}
-
-function handleExpiryChange() {
-  const expiry = document.getElementById("expiry").value;
-  document.getElementById("customExpiry").style.display = expiry === "custom" ? "block" : "none";
-}
-
-function showLoader(show = true) {
+// --- SHORTENER LOGIC ---
+function showLoader(show) {
   document.getElementById("loader").style.display = show ? "flex" : "none";
 }
 
-function updateResultBox(message, isSuccess = true) {
-  const box = document.getElementById("result");
-  box.className = "result-box " + (isSuccess ? "success" : "error");
-  box.innerHTML = message;
+function handleExpiryChange() {
+  const val = document.getElementById("expiry").value;
+  document.getElementById("customExpiry").style.display = val === "custom" ? "block" : "none";
 }
 
-function isValidUrl(url) {
-  try { new URL(url); return true; } catch { return false; }
-}
-
-function getExpiryTimestamp(option, custom) {
-  if (option === "custom" && custom) return new Date(custom).getTime();
+function getExpiryTimestamp(option, customDate) {
+  if (option === "custom" && customDate) return new Date(customDate).getTime();
   const now = Date.now();
-  switch (option) {
-    case "1h": return now + 3600000;
-    case "1d": return now + 86400000;
-    case "7d": return now + 604800000;
-    default: return null;
-  }
-}
-
-function copyToClipboard(text) {
-  navigator.clipboard.writeText(text).then(() => alert("✅ Copied to clipboard!"));
-}
-
-function shareLink(link) {
-  if (navigator.share) {
-    navigator.share({ title: "Check this out!", url: link });
-  } else {
-    alert("❌ Browser doesn't support share.");
-  }
+  if (option === "1h") return now + 3600000;
+  if (option === "1d") return now + 86400000;
+  if (option === "7d") return now + 604800000;
+  return null;
 }
 
 function shorten() {
-  let longUrl = document.getElementById("longUrl").value.trim();
+  const longUrl = document.getElementById("longUrl").value.trim();
   let alias = document.getElementById("customAlias").value.trim();
   const password = document.getElementById("linkPassword").value.trim();
   const expiryOpt = document.getElementById("expiry").value;
-  const customExpiry = document.getElementById("customExpiry").value;
+  const customExp = document.getElementById("customExpiry").value;
   const resultBox = document.getElementById("result");
 
-  resultBox.className = "result-box";
+  // Reset UI
   resultBox.innerHTML = "";
+  resultBox.className = "result-box";
 
-  if (!longUrl.startsWith("http")) longUrl = "https://" + longUrl;
-  if (!isValidUrl(longUrl)) return updateResultBox("❌ Invalid URL", false);
+  if (!longUrl) return alert("Please enter a URL.");
+  let formattedUrl = longUrl.startsWith("http") ? longUrl : "https://" + longUrl;
 
+  // Auto-generate alias if empty
   if (!alias) {
-    alias = "link" + Math.floor(1000 + Math.random() * 9000);
-    document.getElementById("customAlias").value = alias;
+    alias = Math.random().toString(36).substring(2, 8);
   }
 
-  if (!alias.match(/^[a-zA-Z0-9_-]+$/)) {
-    return updateResultBox("❌ Invalid alias characters", false);
-  }
-
-  const ref = db.ref("links/" + alias);
   showLoader(true);
+  const ref = db.ref("links/" + alias);
 
   ref.once("value").then(snapshot => {
     if (snapshot.exists()) {
       showLoader(false);
-      return updateResultBox("❌ Alias already taken", false);
-    } else {
-      const expiryTimestamp = getExpiryTimestamp(expiryOpt, customExpiry);
-      const userId = currentUser ? currentUser.uid : "guest";
-      const userEmail = currentUser ? currentUser.email : null;
+      resultBox.className = "result-box error";
+      resultBox.innerHTML = "❌ Alias is already taken. Try another one.";
+      return;
+    }
 
-      ref.set({
-        url: longUrl,
-        password: password || null,
-        createdAt: Date.now(),
-        expiresAt: expiryTimestamp || null,
-        userId,
-        userEmail
-      }, error => {
-        showLoader(false);
-        if (error) {
-          return updateResultBox("❌ Failed to shorten", false);
-        } else {
-          const shortUrl = `${location.origin}/${alias}`;
-          updateResultBox(`
-            <div class="og-card">
-              <img src="https://api.apiflash.com/v1/urltoimage?access_key=b0e5bc53bdf0417eb10f041ec400ebaf&url=${encodeURIComponent(shortUrl)}" onerror="this.style.display='none'"/>
-              <div class="og-info">
-                <h3>✅ Short Link Created</h3>
-                <p>${shortUrl}</p>
-                <div class="share-buttons">
-                  <a href="https://wa.me/?text=${encodeURIComponent(shortUrl)}" target="_blank">WhatsApp</a>
-                  <a href="https://t.me/share/url?url=${encodeURIComponent(shortUrl)}" target="_blank">Telegram</a>
-                  <a onclick="shareLink('${shortUrl}')" style="cursor:pointer;">More</a>
-                </div>
+    const payload = {
+      url: formattedUrl,
+      password: password || null,
+      createdAt: Date.now(),
+      expiresAt: getExpiryTimestamp(expiryOpt, customExp),
+      userId: currentUser ? currentUser.uid : "guest",
+      userEmail: currentUser ? currentUser.email : null
+    };
+
+    ref.set(payload, err => {
+      showLoader(false);
+      if (err) {
+        resultBox.className = "result-box error";
+        resultBox.innerHTML = "❌ Database error: " + err.message;
+      } else {
+        const shortUrl = `${location.origin}/${alias}`;
+        
+        // --- THIS IS THE FIXED PRO UI GENERATION ---
+        resultBox.className = "result-box"; // Remove error class
+        resultBox.innerHTML = `
+          <div class="og-card">
+            <img src="https://api.apiflash.com/v1/urltoimage?access_key=b0e5bc53bdf0417eb10f041ec400ebaf&url=${encodeURIComponent(shortUrl)}" 
+                 class="preview-img" 
+                 onerror="this.style.display='none'" />
+            
+            <div class="og-info">
+              <h3>🎉 Short Link Ready!</h3>
+              
+              <div class="link-display">
+                <input type="text" value="${shortUrl}" readonly id="shortUrlInput" onclick="this.select()">
+                <button class="copy-btn" onclick="copyToClipboard('${shortUrl}')">Copy</button>
+              </div>
+
+              <div class="share-buttons">
+                <a href="https://wa.me/?text=${encodeURIComponent(shortUrl)}" target="_blank" class="share-btn">
+                  💬 WhatsApp
+                </a>
+                <a href="https://t.me/share/url?url=${encodeURIComponent(shortUrl)}" target="_blank" class="share-btn">
+                  ✈️ Telegram
+                </a>
+                <a onclick="shareNative('${shortUrl}')" class="share-btn" style="cursor: pointer;">
+                  🔗 Share
+                </a>
               </div>
             </div>
-            <button class="button" onclick="copyToClipboard('${shortUrl}')">📋 Copy</button><br><br>
-            <img src="https://api.qrserver.com/v1/create-qr-code/?data=${encodeURIComponent(shortUrl)}&size=150x150" />
-          `, true);
-        }
-      });
-    }
+          </div>
+
+          <div class="qr-container">
+            <img src="https://api.qrserver.com/v1/create-qr-code/?data=${encodeURIComponent(shortUrl)}&size=120x120" alt="QR Code" />
+          </div>
+        `;
+      }
+    });
   });
 }
 
+// --- UTILS ---
+function copyToClipboard(text) {
+  navigator.clipboard.writeText(text).then(() => {
+    const btn = document.querySelector('.copy-btn');
+    const originalText = btn.innerText;
+    btn.innerText = "Copied!";
+    btn.style.background = "#22c55e";
+    setTimeout(() => {
+      btn.innerText = originalText;
+      btn.style.background = ""; // reset to CSS default
+    }, 2000);
+  });
+}
+
+function shareNative(url) {
+  if (navigator.share) {
+    navigator.share({ title: "Short Link", url: url });
+  } else {
+    copyToClipboard(url);
+    alert("Link copied to clipboard!");
+  }
+}
+
+// --- SIDEBAR LOGIC (PRO ALIGNMENT) ---
 let linksListener = null;
 
 function fetchUserLinks(uid) {
   const userLinksRef = db.ref("links");
   const linksList = document.getElementById("userLinksList");
+  
   if (linksListener) userLinksRef.off("value", linksListener);
+  
   linksListener = userLinksRef.orderByChild("userId").equalTo(uid);
+  
   linksListener.on("value", snapshot => {
     linksList.innerHTML = "";
     if (!snapshot.exists()) {
-      linksList.innerHTML = "<li>No links found.</li>";
+      linksList.innerHTML = "<div style='color: #94a3b8; text-align:center; padding:20px;'>No links found.</div>";
       return;
     }
+    
     snapshot.forEach(child => {
       const alias = child.key;
       const data = child.val();
-      const li = document.createElement("li");
-      li.innerHTML = `
-        <div>
-          <strong>🔗 <a href="/${alias}" target="_blank">${alias}</a></strong><br/>
-          <small>${data.password ? `🔒 Password protected` : `🔓 Public`}</small>
+      
+      const item = document.createElement("div");
+      item.className = "link-item";
+      
+      item.innerHTML = `
+        <a href="/${alias}" target="_blank" class="link-alias">/${alias}</a>
+        <div class="link-meta">
+          <span>${data.password ? '🔒 Protected' : '🌐 Public'}</span>
+          <div>
+            <button onclick="showEditForm('${alias}')" class="action-btn">✏️</button>
+            <button onclick="deleteUserLink('${alias}')" class="action-btn">🗑️</button>
+          </div>
         </div>
-        <div style="display:flex; gap:5px; margin-top:5px;">
-          <button onclick="showEditForm('${alias}')">✏️ Edit</button>
-          <button onclick="deleteUserLink('${alias}')">🗑️</button>
-        </div>
-        <div id="edit-${alias}" class="edit-form" style="display:none;">
-          <input type="text" placeholder="New alias" id="new-alias-${alias}" class="input" value="${alias}" />
-          <input type="password" placeholder="New password" id="new-pass-${alias}" class="input" />
-          <button onclick="updateUserLink('${alias}')">✅ Save</button>
-          <button onclick="cancelEdit('${alias}')">❌ Cancel</button>
+        
+        <div id="edit-${alias}" style="display:none; margin-top:10px; border-top:1px solid rgba(255,255,255,0.1); padding-top:10px;">
+          <input type="text" id="new-alias-${alias}" value="${alias}" class="input" style="padding:8px; font-size:0.9rem; margin-bottom:5px;">
+          <input type="password" id="new-pass-${alias}" placeholder="New Password" class="input" style="padding:8px; font-size:0.9rem; margin-bottom:5px;">
+          <div style="display:flex; gap:5px;">
+            <button onclick="updateUserLink('${alias}')" class="button" style="padding:8px; font-size:0.8rem;">Save</button>
+            <button onclick="document.getElementById('edit-${alias}').style.display='none'" class="button" style="padding:8px; font-size:0.8rem; background:#ef4444;">Cancel</button>
+          </div>
         </div>
       `;
-      linksList.appendChild(li);
+      linksList.prepend(item); // Newest first
     });
   });
 }
 
-function deleteUserLink(alias) {
-  if (!confirm(`Delete the short link "${alias}"?`)) return;
-  db.ref(`links/${alias}`).remove()
-    .then(() => alert("✅ Link deleted."))
-    .catch(err => alert("❌ Error deleting: " + err.message));
+function showEditForm(alias) {
+  const form = document.getElementById(`edit-${alias}`);
+  form.style.display = form.style.display === "none" ? "block" : "none";
 }
 
-function showEditForm(alias) { document.getElementById(`edit-${alias}`).style.display = 'block'; }
-function cancelEdit(alias) { document.getElementById(`edit-${alias}`).style.display = 'none'; }
+function deleteUserLink(alias) {
+  if (confirm("Are you sure you want to delete this link?")) {
+    db.ref(`links/${alias}`).remove();
+  }
+}
 
 function updateUserLink(oldAlias) {
   const newAlias = document.getElementById(`new-alias-${oldAlias}`).value.trim();
   const newPassword = document.getElementById(`new-pass-${oldAlias}`).value.trim();
-  if (!newAlias.match(/^[a-zA-Z0-9_-]+$/)) return alert("❌ Alias must be alphanumeric with - or _");
-  const oldRef = db.ref("links/" + oldAlias);
-  const newRef = db.ref("links/" + newAlias);
-  oldRef.once("value", snapshot => {
-    if (!snapshot.exists()) return alert("❌ Original link not found");
-    const data = snapshot.val();
+  
+  if (!newAlias) return alert("Alias cannot be empty");
+  
+  const oldRef = db.ref(`links/${oldAlias}`);
+  const newRef = db.ref(`links/${newAlias}`);
+  
+  oldRef.once("value", snap => {
+    const data = snap.val();
     data.password = newPassword || null;
+    
     if (oldAlias === newAlias) {
-      oldRef.set(data).then(() => alert("✅ Password updated"));
+      oldRef.set(data).then(() => {
+        alert("Updated!");
+        document.getElementById(`edit-${oldAlias}`).style.display='none';
+      });
     } else {
-      newRef.once("value", snap => {
-        if (snap.exists()) return alert("❌ New alias is already taken");
-        newRef.set(data).then(() => oldRef.remove().then(() => alert("✅ Alias and password updated")));
+      newRef.once("value", existsSnap => {
+        if (existsSnap.exists()) return alert("Alias taken!");
+        newRef.set(data).then(() => {
+          oldRef.remove();
+          alert("Alias updated!");
+        });
       });
     }
   });
 }
 
-function applyMobileThemeIfNeeded() {
-  if (window.innerWidth <= 768) {
-    document.body.classList.add("mobile-theme");
-  } else {
-    document.body.classList.remove("mobile-theme");
-    document.body.classList.remove("sidebar-open");
-  }
+// Paste this at the bottom of script.js
+function showToast(message) {
+    // Create element if not exists
+    let toast = document.getElementById("toast");
+    if (!toast) {
+        toast = document.createElement("div");
+        toast.id = "toast";
+        toast.className = "toast";
+        document.body.appendChild(toast);
+    }
+    toast.innerText = message;
+    toast.className = "toast show";
+    setTimeout(() => { toast.className = toast.className.replace("show", ""); }, 3000);
 }
-
-window.addEventListener("DOMContentLoaded", applyMobileThemeIfNeeded);
-window.addEventListener("resize", applyMobileThemeIfNeeded);

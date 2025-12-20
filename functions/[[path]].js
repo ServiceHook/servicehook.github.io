@@ -1,23 +1,31 @@
 export async function onRequestGet(context) {
   const { request, env, params } = context;
   const url = new URL(request.url);
+  const path = url.pathname;
 
   // =========================================================
-  // 🛑 WHITELIST: IGNORE API, FILES, AND HOMEPAGE
+  // 🛑 WHITELIST: IGNORE API, FILES, AND SPECIFIC PAGES
   // =========================================================
 
-  // 1. If asking for API, let the API script handle it
-  if (url.pathname.startsWith("/api/")) {
+  // 1. API Requests
+  if (path.startsWith("/api/")) {
     return env.ASSETS.fetch(request);
   }
 
-  // 2. If asking for a file (css, js, png), just show it
-  if (url.pathname.startsWith("/file/") || url.pathname.includes(".")) {
+  // 2. Static Files (CSS, JS, Images, HTML files with extension)
+  if (path.startsWith("/file/") || path.includes(".")) {
     return env.ASSETS.fetch(request);
   }
 
-  // 3. If asking for the Homepage, show index.html
-  if (url.pathname === "/" || !params.path || params.path.length === 0) {
+  // 3. Explicitly Exclude "Legal" and "Admin" pages
+  // This allows accessing /legal without it being treated as a short link
+  const excludedPaths = ["/legal", "/legal.html", "/admin", "/404"];
+  if (excludedPaths.includes(path)) {
+    return env.ASSETS.fetch(request);
+  }
+
+  // 4. Homepage
+  if (path === "/" || !params.path || params.path.length === 0) {
     return env.ASSETS.fetch(request);
   }
 
@@ -43,8 +51,8 @@ export async function onRequestGet(context) {
       return Response.redirect(data.url, 302);
     }
 
-    // If link not found, go to homepage
-    return Response.redirect(url.origin, 302);
+    // If link not found, go to homepage (or custom 404)
+    return Response.redirect(url.origin + "/404.html", 302);
 
   } catch (err) {
     // If error, just show homepage

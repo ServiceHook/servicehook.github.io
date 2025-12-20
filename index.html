@@ -1,106 +1,137 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-	<!-- Google tag (gtag.js) -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=AW-17389391134"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-
-  gtag('config', 'AW-17389391134');
-</script>
+  <script async src="https://www.googletagmanager.com/gtag/js?id=AW-17389391134"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'AW-17389391134');
+  </script>
   <meta name="google-adsense-account" content="ca-pub-5931219908100170">
   <meta charset="UTF-8" />
-  <title>jachu Shortener v2</title>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/file/styles.css" />
-
-	
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-
+  <title>Jachu | Professional URL Shortener</title>
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="manifest" href="/manifest.json">
+<meta name="theme-color" content="#020617">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="stylesheet" href="/file/styles.css" />
 </head>
 <body>
-  <!-- Hamburger Menu (for mobile) -->
+
+  <div id="authButtons">
+    <div id="userIdDisplay" style="color: #94a3b8; font-size: 0.9rem; margin-right: 8px;"></div>
+    
+    <a href="/api/dashboard.html" class="button" style="background: transparent; border: none; box-shadow: none; color: #a5b4fc;">Developers</a>
+    
+    <a href="legal.html" class="button" style="background: transparent; border: none; box-shadow: none;">Legal</a>
+    <button class="button" onclick="toggleAuthModal()">Login</button>
+    <button class="button" onclick="signOut()" style="display: none;">Sign Out</button>
+  </div>
+
   <button class="hamburger-menu" onclick="toggleSidebar()">
     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
   </button>
   
-  <!-- Overlay -->
-  <div id="overlay" onclick="toggleSidebar()"></div>
+  <div id="overlay" onclick="closeSidebar()"></div>
 
-  <!-- Auth bar -->
-  <div style="position: fixed; top: 10px; left: 20px; color: white;" id="userIdDisplay">👤 Guest</div>
-  <div style="position: fixed; top: 10px; right: 20px;" id="authButtons">
-    <button class="button" onclick="toggleAuthModal()">🔐 Login / Sign Up</button>
-	  
-    <a href="legal.html" class="button">Legal & Policies</a>	
+  <div id="sidebar" class="sidebar">
+    <div class="sidebar-header">
+      <h2>👤 My Links</h2>
+      <button class="close-btn" onclick="closeSidebar()">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+      </button>
+    </div>
 
-    <button class="button" onclick="signOut()" style="display: none;">🚪 Sign Out</button>
-  </div>
-
-  <!-- Auth Modal -->
-  <div id="authModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.6); z-index:9999; justify-content:center; align-items:center;">
-    <div style="background:#1e293b; padding:30px; border-radius:12px; color:white; width:300px;">
-      <h2 style="margin-top:0;">🔐 Auth Portal</h2>
-      <input id="email" placeholder="Email" class="input" type="email" />
-      <input id="password" placeholder="Password" class="input" type="password" />
-	  <button class="button" id="resetBtn" onclick="resetPassword()" disabled style="opacity: 0.5; cursor: not-allowed;">🔁 Reset Password</button>
-      <button class="button" id="loginBtn" onclick="signIn()">Login</button>
-      <button class="button" id="signupBtn" onclick="signUp()">Sign Up</button>
-
-      <button class="button" onclick="toggleAuthModal()">Close</button>
+    <div class="sidebar-content">
+      <p id="userEmail" style="font-size: 0.85rem; color: #6366f1; margin-bottom: 20px;"></p>
+      
+      <div id="userLinksList" style="display: flex; flex-direction: column;">
+        </div>
+    </div>
+    
+    <div class="sidebar-footer">
+      <a href="/api/dashboard.html" class="button" style="margin-bottom: 10px; text-align: center; text-decoration: none; display: block; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);">⚡ Developer API</a>
+      
+      <button class="button" onclick="signOut()" style="background: #ef4444; width: 100%;">Sign Out</button>
     </div>
   </div>
-  
-  <!-- Sidebar for logged-in users -->
-  <div id="sidebar" class="sidebar">
-    <h2>👤 My Links</h2>
-    <p id="userEmail"></p>
-    <hr>
-    <ul id="userLinksList"></ul>
-    <hr class="sidebar-divider">
-    <!-- Sign out button for mobile convenience -->
-    <button class="button sidebar-signout" onclick="signOut()">🚪 Sign Out</button>
-  </div>
 
-  <!-- Main App -->
   <div class="main-container">
-    <h1 class="title">🔗 jachu URL Shortener v2</h1>
+    <h1 class="title">Shorten Your Links</h1>
 
-    <div class="shortener-box glass">
-      <input type="url" id="longUrl" placeholder="Paste your long URL" class="input" />
-      <input type="text" id="customAlias" placeholder="Custom alias (e.g. mylink)" class="input" />
-      <input type="password" id="linkPassword" placeholder="Password (optional)" class="input" />
-      
-      <div class="expiry-wrapper">
+    <div class="shortener-box">
+      <div class="input-group">
+        <input type="url" id="longUrl" placeholder="Paste your long URL here..." class="input" autocomplete="off" />
+      </div>
+      <div class="input-group">
+        <input type="text" id="customAlias" placeholder="Custom alias (optional)" class="input" autocomplete="off" />
+      </div>
+      <div class="input-group">
+        <input type="password" id="linkPassword" placeholder="Set a password (optional)" class="input" autocomplete="new-password" />
+      </div>
+      <div class="input-group">
         <select id="expiry" class="input" onchange="handleExpiryChange()">
-          <option value="none">No Limit</option>
-          <option value="1h">1 Hour</option>
-          <option value="1d">1 Day</option>
-          <option value="7d">7 Days</option>
-          <option value="custom">Custom</option>
+          <option value="none">No Expiration</option>
+          <option value="1h">Expire in 1 Hour</option>
+          <option value="1d">Expire in 1 Day</option>
+          <option value="7d">Expire in 7 Days</option>
+          <option value="custom">Custom Date...</option>
         </select>
-        <input type="datetime-local" id="customExpiry" class="input" style="display: none;" />
+        <input type="datetime-local" id="customExpiry" class="input" style="display: none; margin-top: 10px;" />
       </div>
 
-      <button onclick="shorten()" class="button pulse">✨ Create Short Link</button>
+      <button onclick="shorten()" class="button">Create Short Link ✨</button>
     </div>
 
     <div id="result" class="result-box"></div>
   </div>
 
-  <!-- Firebase SDK -->
-  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
-
-  <script src="/file/script.js"></script>
+  <div id="authModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.8); backdrop-filter: blur(5px); z-index:9999; justify-content:center; align-items:center;">
+    <div class="shortener-box" style="width: 350px; text-align: center;">
+      <h2 style="margin-top:0; margin-bottom: 20px; color: white;">Welcome Back</h2>
+      <input id="email" placeholder="Email Address" class="input" type="email" style="margin-bottom: 10px;" />
+      <input id="password" placeholder="Password" class="input" type="password" style="margin-bottom: 20px;" />
+      <button class="button" id="loginBtn" onclick="signIn()" style="margin-bottom: 10px;">Log In</button>
+      <button class="button" id="signupBtn" onclick="signUp()" style="background: transparent; border: 1px solid rgba(255,255,255,0.2);">Create Account</button>
+      <button id="resetBtn" onclick="resetPassword()" disabled style="background:none; border:none; color:#94a3b8; margin-top:15px; cursor:pointer;">Forgot Password?</button>
+      <div style="margin-top: 20px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 15px;">
+        <button onclick="toggleAuthModal()" style="background: none; border: none; color: #ef4444; cursor: pointer;">Close</button>
+      </div>
+    </div>
+  </div>
 
   <div id="loader" class="loader-overlay" style="display: none;"><div class="spinner"></div></div>
 
-<script
-  src='https://cdn.jotfor.ms/agent/embedjs/0197fa7374c97c9fade854e7f577b1bedcde/embed.js?skipWelcome=1&maximizable=1'>
-</script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+  <script src="/file/script.js"></script>
+  
+  <script>
+    /* UI Logic for Sidebar */
+    function toggleSidebar() {
+      const sidebar = document.getElementById('sidebar');
+      const overlay = document.getElementById('overlay');
+      const isOpen = sidebar.classList.contains('open');
+      
+      if (isOpen) {
+        closeSidebar();
+      } else {
+        sidebar.classList.add('open');
+        overlay.classList.add('active');
+      }
+    }
+
+    function closeSidebar() {
+      document.getElementById('sidebar').classList.remove('open');
+      document.getElementById('overlay').classList.remove('active');
+    }
+  </script>
+
 </body>
 </html>

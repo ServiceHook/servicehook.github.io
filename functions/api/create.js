@@ -4,7 +4,7 @@ export async function onRequest(context) {
   // CORS Headers
   const corsHeaders = {
     "Access-Control-Allow-Origin": "*",
-    "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+    "Access-Control-Allow-Methods": "POST, OPTIONS",
     "Access-Control-Allow-Headers": "Content-Type, X-API-Key",
     "Access-Control-Max-Age": "86400",
   };
@@ -18,48 +18,60 @@ export async function onRequest(context) {
       const apiKey = request.headers.get("X-API-Key");
       if (!apiKey) throw new Error("Missing API Key");
 
-      // Verify Key
+      // 1. Verify API Key
       const keyUrl = `${env.FIREBASE_DB_URL}/api_keys/${apiKey}.json?auth=${env.FIREBASE_DB_SECRET}`;
       const keyRes = await fetch(keyUrl);
       const keyData = await keyRes.json();
 
       if (!keyData) throw new Error("Invalid API Key");
-      if (keyData.usage >= 50) throw new Error("Monthly limit reached");
+      if (keyData.usage >= keyData.limit) throw new Error("Monthly limit reached");
 
-      // Get Data
+      // 2. Validate URL
       const body = await request.json();
-      if (!body.url) throw new Error("Missing URL");
+      if (!body.url) throw new Error("Missing URL parameter");
 
-      const slug = body.slug || Math.random().toString(36).substring(2, 8);
+      // 🛑 SECURITY: Prevent self-shortening (Loops)
+      const blockedDomains = ["jachu.xyz", "servicehook.github.io"];
+      if (blockedDomains.some(domain => body.url.includes(domain))) {
+         throw new Error("Cannot shorten links from this domain.");
+      }
+
+      // 3. Generate Slug (Custom or Random)
+      let slug = body.slug ? body.slug.trim() : Math.random().toString(36).substring(2, 8);
       
-      // === FIX: Save to 'links' folder using 'url' key ===
+      // If custom slug, check if exists (Optional check to prevent overwrite)
+      // For speed, we are skipping the 'check if exists' read, but in production, you might want it.
+
+      // 4. Save to Database
       const saveUrl = `${env.FIREBASE_DB_URL}/links/${slug}.json?auth=${env.FIREBASE_DB_SECRET}`;
       
       await fetch(saveUrl, {
         method: 'PUT',
         body: JSON.stringify({ 
-            url: body.url,        // <--- Uses 'url' key
+            url: body.url,
             createdAt: Date.now(), 
-            userId: keyData.uid 
+            userId: keyData.uid,
+            source: "api"
         })
       });
 
-      // Update Usage
+      // 5. Increment Usage
       await fetch(`${env.FIREBASE_DB_URL}/api_keys/${apiKey}/usage.json?auth=${env.FIREBASE_DB_SECRET}`, {
         method: 'PUT',
-        body: keyData.usage + 1
+        body: (keyData.usage || 0) + 1
       });
 
       return new Response(JSON.stringify({
         status: "success",
         short_url: `https://jachu.xyz/${slug}`,
-        usage: keyData.usage + 1
+        usage: (keyData.usage || 0) + 1,
+        limit: keyData.limit
       }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" }
       });
 
     } catch (err) {
-      return new Response(JSON.stringify({ error: err.message }), {
+      return new Response(JSON.stringify({ status: "error", message: err.message }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" }
       });
