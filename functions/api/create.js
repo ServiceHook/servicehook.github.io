@@ -1,32 +1,24 @@
 export async function onRequest(context) {
   const { request, env } = context;
 
-  // 1. Define Standard Headers (The "Permission Slip")
+  // 1. CORS Headers
   const corsHeaders = {
     "Access-Control-Allow-Origin": "*",
     "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
     "Access-Control-Allow-Headers": "Content-Type, X-API-Key",
-    "Access-Control-Max-Age": "86400", // Cache this permission for 1 day
+    "Access-Control-Max-Age": "86400",
   };
 
-  // 2. Handle Preflight (The Browser's Check)
-  // If the browser asks "Can I post?", we say "YES" immediately.
   if (request.method === "OPTIONS") {
-    return new Response(null, {
-      status: 200,
-      headers: corsHeaders
-    });
+    return new Response(null, { status: 200, headers: corsHeaders });
   }
 
-  // 3. Handle the Actual Request
   if (request.method === "POST") {
     try {
       const apiKey = request.headers.get("X-API-Key");
-
-      // --- Security & Validation ---
       if (!apiKey) throw new Error("Missing API Key");
 
-      // Check Firebase for Key
+      // Check Key
       const keyUrl = `${env.FIREBASE_DB_URL}/api_keys/${apiKey}.json?auth=${env.FIREBASE_DB_SECRET}`;
       const keyRes = await fetch(keyUrl);
       const keyData = await keyRes.json();
@@ -34,16 +26,23 @@ export async function onRequest(context) {
       if (!keyData) throw new Error("Invalid API Key");
       if (keyData.usage >= 50) throw new Error("Monthly limit reached");
 
-      // --- Create Link ---
+      // Get Data
       const body = await request.json();
       if (!body.url) throw new Error("Missing URL");
 
       const slug = body.slug || Math.random().toString(36).substring(2, 8);
       
-      // Save to Firebase
-      await fetch(`${env.FIREBASE_DB_URL}/links/${slug}.json?auth=${env.FIREBASE_DB_SECRET}`, {
+      // === FIX 1: Save to ROOT (Removed /links/) ===
+      // === FIX 2: Use "url" key instead of "long_url" ===
+      const saveUrl = `${env.FIREBASE_DB_URL}/${slug}.json?auth=${env.FIREBASE_DB_SECRET}`;
+      
+      await fetch(saveUrl, {
         method: 'PUT',
-        body: JSON.stringify({ long_url: body.url, created_at: Date.now(), created_by: keyData.uid })
+        body: JSON.stringify({ 
+            url: body.url,   // <--- CHANGED TO 'url'
+            createdAt: Date.now(), 
+            userId: keyData.uid 
+        })
       });
 
       // Update Usage
@@ -52,7 +51,6 @@ export async function onRequest(context) {
         body: keyData.usage + 1
       });
 
-      // --- Success Response ---
       return new Response(JSON.stringify({
         status: "success",
         short_url: `https://jachu.xyz/${slug}`,
@@ -62,7 +60,6 @@ export async function onRequest(context) {
       });
 
     } catch (err) {
-      // --- Error Response (MUST have CORS headers too) ---
       return new Response(JSON.stringify({ error: err.message }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" }
@@ -70,6 +67,5 @@ export async function onRequest(context) {
     }
   }
 
-  // 4. Block anything else
   return new Response("Method Not Allowed", { status: 405, headers: corsHeaders });
 }
