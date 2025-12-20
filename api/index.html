@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Developer Dashboard | Jachu</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        :root { --primary: #3b82f6; --bg: #0f172a; --card: #1e293b; --text: #f1f5f9; }
+        body { font-family: sans-serif; background: var(--bg); color: var(--text); display: flex; justify-content: center; padding-top: 50px; margin: 0; }
+        
+        .dashboard { background: var(--card); padding: 2rem; border-radius: 12px; width: 100%; max-width: 480px; box-shadow: 0 4px 20px rgba(0,0,0,0.5); text-align: center; }
+        
+        h2 { margin-top: 0; }
+        .hidden { display: none; }
+        
+        /* Key Display Box */
+        .key-box { background: #000; padding: 15px; border-radius: 6px; border: 1px solid #334155; margin: 20px 0; position: relative; word-break: break-all; font-family: monospace; color: #4ade80; }
+        
+        button { background: var(--primary); color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-size: 1rem; width: 100%; margin-top: 10px; }
+        button:hover { opacity: 0.9; }
+        button.logout { background: #ef4444; margin-top: 20px; }
+
+        .loader { border: 3px solid #f3f3f3; border-top: 3px solid var(--primary); border-radius: 50%; width: 20px; height: 20px; animation: spin 1s linear infinite; margin: 20px auto; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+
+    <div id="loading" class="loader"></div>
+
+    <div id="login-prompt" class="dashboard hidden">
+        <h2>Access Restricted</h2>
+        <p>Please log in to manage your API keys.</p>
+        <button onclick="window.location.href='index.html'">Go to Login</button>
+    </div>
+
+    <div id="main-dash" class="dashboard hidden">
+        <p style="color: #94a3b8; font-size: 0.9rem;">My Developer Account</p>
+        <h2>API Key Management</h2>
+        
+        <div class="key-box">
+            <span id="apiKeyDisplay">********************************</span>
+        </div>
+
+        <p>Monthly Usage: <strong id="usageDisplay">0</strong> / 50</p>
+
+        <button id="revealBtn" onclick="generateOrRevealKey()">Reveal / Generate Key</button>
+        
+        <div style="margin-top: 20px; text-align: left; font-size: 0.85rem; color: #cbd5e1; background: #334155; padding: 10px; border-radius: 6px;">
+            <strong>How to use:</strong><br>
+            POST https://jachu.xyz/api/create<br>
+            Header: <code>X-API-Key: YOUR_KEY</code><br>
+            Body: <code>{ "url": "https://google.com" }</code>
+        </div>
+
+        <button class="logout" onclick="logout()">Sign Out</button>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+
+    <script>
+        // 1. YOUR FIREBASE CONFIG
+        const firebaseConfig = {
+  apiKey: "AIzaSyBKA3bxy1caa0QiGrn6AihtxufiO7xxTnI",
+  authDomain: "futrshortener-7acf0.firebaseapp.com",
+  databaseURL: "https://futrshortener-7acf0-default-rtdb.firebaseio.com",
+  projectId: "futrshortener-7acf0",
+  storageBucket: "futrshortener-7acf0.firebasestorage.app",
+  messagingSenderId: "863839648409",
+  appId: "1:863839648409:web:d20ae154fe1c9dc1b19608"
+};
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+
+        // 2. CHECK AUTH STATE
+        auth.onAuthStateChanged(user => {
+            document.getElementById('loading').classList.add('hidden');
+            if (user) {
+                document.getElementById('main-dash').classList.remove('hidden');
+                // You could auto-fetch the usage here if you wanted
+            } else {
+                document.getElementById('login-prompt').classList.remove('hidden');
+            }
+        });
+
+        // 3. GENERATE / FETCH KEY
+        async function generateOrRevealKey() {
+            const user = auth.currentUser;
+            if (!user) return;
+
+            const btn = document.getElementById('revealBtn');
+            btn.innerText = "Loading...";
+            
+            try {
+                // Get the secure ID token from Firebase
+                const token = await user.getIdToken();
+
+                // Send to your Cloudflare Backend
+                const response = await fetch('/api/generate_key', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ token: token }) // Send token for verification
+                });
+
+                const data = await response.json();
+
+                if (data.status === 'success') {
+                    document.getElementById('apiKeyDisplay').innerText = data.api_key;
+                    btn.innerText = "Key Visible";
+                    // You might want to fetch usage separately or return it in the generate_key response
+                } else {
+                    alert("Error: " + data.error);
+                }
+            } catch (e) {
+                alert("Network error");
+            }
+        }
+
+        function logout() {
+            auth.signOut().then(() => window.location.reload());
+        }
+    </script>
+</body>
+</html>
