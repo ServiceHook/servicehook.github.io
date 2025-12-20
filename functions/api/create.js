@@ -1,7 +1,7 @@
 export async function onRequest(context) {
   const { request, env } = context;
 
-  // 1. CORS Headers
+  // CORS Headers
   const corsHeaders = {
     "Access-Control-Allow-Origin": "*",
     "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
@@ -18,7 +18,7 @@ export async function onRequest(context) {
       const apiKey = request.headers.get("X-API-Key");
       if (!apiKey) throw new Error("Missing API Key");
 
-      // Check Key
+      // Verify Key
       const keyUrl = `${env.FIREBASE_DB_URL}/api_keys/${apiKey}.json?auth=${env.FIREBASE_DB_SECRET}`;
       const keyRes = await fetch(keyUrl);
       const keyData = await keyRes.json();
@@ -32,14 +32,13 @@ export async function onRequest(context) {
 
       const slug = body.slug || Math.random().toString(36).substring(2, 8);
       
-      // === FIX 1: Save to ROOT (Removed /links/) ===
-      // === FIX 2: Use "url" key instead of "long_url" ===
-      const saveUrl = `${env.FIREBASE_DB_URL}/${slug}.json?auth=${env.FIREBASE_DB_SECRET}`;
+      // === FIX: Save to 'links' folder using 'url' key ===
+      const saveUrl = `${env.FIREBASE_DB_URL}/links/${slug}.json?auth=${env.FIREBASE_DB_SECRET}`;
       
       await fetch(saveUrl, {
         method: 'PUT',
         body: JSON.stringify({ 
-            url: body.url,   // <--- CHANGED TO 'url'
+            url: body.url,        // <--- Uses 'url' key
             createdAt: Date.now(), 
             userId: keyData.uid 
         })
