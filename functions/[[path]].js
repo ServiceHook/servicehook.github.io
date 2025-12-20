@@ -1,33 +1,37 @@
 export async function onRequestGet(context) {
   const { request, env, params } = context;
+  const url = new URL(request.url);
   
-  // 1. If Homepage, show index.html
-  if (!params.path || params.path.length === 0) {
+  // =========================================================
+  // 🛑 WHITELIST: IGNORE API, FILES, AND ASSETS
+  // =========================================================
+
+  // 1. Ignore your API pages (e.g., /api/dashboard.html)
+  if (url.pathname.startsWith("/api/")) {
     return env.ASSETS.fetch(request);
   }
 
-  const shortCode = params.path[0];
-
-  // =========================================================
-  // 🛑 WHITELIST: IGNORE DASHBOARD & FILES
-  // =========================================================
-  
-  // A. Allow specific page names (Fixes the issue if URL is just /dashboard)
-  // Add any other HTML filenames here (without .html)
-  const protectedPages = ["dashboard", "404", "login", "register"]; 
-  if (protectedPages.includes(shortCode)) {
+  // 2. Ignore your Asset folder (e.g., /file/styles.css)
+  // This is the CRITICAL fix for your CSS/JS
+  if (url.pathname.startsWith("/file/")) {
     return env.ASSETS.fetch(request);
   }
 
-  // B. Allow files with extensions (styles.css, script.js, dashboard.html)
-  // If it has a DOT, it is a file.
-  if (shortCode.includes('.')) {
-     return env.ASSETS.fetch(request);
+  // 3. Ignore file extensions (extra safety)
+  if (url.pathname.includes(".")) {
+    return env.ASSETS.fetch(request);
+  }
+
+  // 4. Ignore Homepage
+  if (url.pathname === "/" || !params.path || params.path.length === 0) {
+    return env.ASSETS.fetch(request);
   }
 
   // =========================================================
   // 🔗 SHORTENER LOGIC
   // =========================================================
+  
+  const shortCode = params.path[0];
 
   try {
     const dbUrl = `${env.FIREBASE_DB_URL}/links/${shortCode}.json`;
@@ -43,8 +47,7 @@ export async function onRequestGet(context) {
       return Response.redirect(data.long_url, 302);
     }
 
-    // Default to home if not found
-    return Response.redirect(new URL(request.url).origin, 302);
+    return Response.redirect(url.origin, 302);
 
   } catch (err) {
     return env.ASSETS.fetch(request);
