@@ -1,42 +1,43 @@
 export async function onRequestGet(context) {
   const { request, env, params } = context;
-  
-  // === FIX IS HERE ===
-  // Safely check if we are on the homepage. 
-  // If params.path is missing or empty, just show the website (index.html).
+  const url = new URL(request.url);
+
+  // 1. If the path is empty (Homepage), just show the site
   if (!params.path || params.path.length === 0) {
     return env.ASSETS.fetch(request);
   }
 
   const shortCode = params.path[0];
 
-  // Double check: if it's a file request (like style.css or script.js), ignore it
-  if (shortCode.includes(".")) {
+  // === THE FIX IS HERE ===
+  // If the path contains a dot (like style.css or script.js), 
+  // it is a file, NOT a short link. Let Cloudflare serve it normally.
+  if (shortCode.includes('.')) {
     return env.ASSETS.fetch(request);
   }
+  // =======================
 
   try {
-    // 1. Check Firebase
+    // 2. Check Firebase for the short link
     const dbUrl = `${env.FIREBASE_DB_URL}/links/${shortCode}.json`;
     const response = await fetch(dbUrl);
     
-    // Check if Firebase actually replied
+    // If Firebase errors out, just show the homepage
     if (!response.ok) {
-       return env.ASSETS.fetch(request); // Fallback to 404/Home if DB fails
+       return env.ASSETS.fetch(request); 
     }
 
     const data = await response.json();
 
-    // 2. Redirect if found
+    // 3. Redirect if found
     if (data && data.long_url) {
       return Response.redirect(data.long_url, 302);
     }
 
-    // 3. If not found, go to homepage (or 404 page)
-    return Response.redirect(new URL(request.url).origin, 302);
+    // 4. If not found, redirect to home
+    return Response.redirect(url.origin, 302);
 
   } catch (err) {
-    // If anything crashes, just show the homepage instead of an error page
     return env.ASSETS.fetch(request);
   }
 }
