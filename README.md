@@ -70,6 +70,7 @@ Error (400/401/429):
 
 5. Implementation Example (HTML/JS)
 Copy this code to add a shortener tool to your site:
+```
 <script>
 async function createShortLink() {
   const apiKey = "YOUR_API_KEY_HERE";
@@ -93,3 +94,4 @@ async function createShortLink() {
 }
 </script>
 
+```
