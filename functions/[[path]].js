@@ -1,70 +1,53 @@
-export async function onRequest(context) {
-  const { request, env } = context;
+export async function onRequestGet(context) {
+  const { request, env, params } = context;
+  const url = new URL(request.url);
 
-  // CORS Headers
-  const corsHeaders = {
-    "Access-Control-Allow-Origin": "*",
-    "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-    "Access-Control-Allow-Headers": "Content-Type, X-API-Key",
-    "Access-Control-Max-Age": "86400",
-  };
+  // =========================================================
+  // 🛑 WHITELIST: IGNORE API, FILES, AND HOMEPAGE
+  // =========================================================
 
-  if (request.method === "OPTIONS") {
-    return new Response(null, { status: 200, headers: corsHeaders });
+  // 1. If asking for API, let the API script handle it
+  if (url.pathname.startsWith("/api/")) {
+    return env.ASSETS.fetch(request);
   }
 
-  if (request.method === "POST") {
-    try {
-      const apiKey = request.headers.get("X-API-Key");
-      if (!apiKey) throw new Error("Missing API Key");
+  // 2. If asking for a file (css, js, png), just show it
+  if (url.pathname.startsWith("/file/") || url.pathname.includes(".")) {
+    return env.ASSETS.fetch(request);
+  }
 
-      // Verify Key
-      const keyUrl = `${env.FIREBASE_DB_URL}/api_keys/${apiKey}.json?auth=${env.FIREBASE_DB_SECRET}`;
-      const keyRes = await fetch(keyUrl);
-      const keyData = await keyRes.json();
+  // 3. If asking for the Homepage, show index.html
+  if (url.pathname === "/" || !params.path || params.path.length === 0) {
+    return env.ASSETS.fetch(request);
+  }
 
-      if (!keyData) throw new Error("Invalid API Key");
-      if (keyData.usage >= 50) throw new Error("Monthly limit reached");
+  // =========================================================
+  // 🔗 SHORTENER LOGIC (Redirects)
+  // =========================================================
+  
+  const shortCode = params.path[0];
 
-      // Get Data
-      const body = await request.json();
-      if (!body.url) throw new Error("Missing URL");
+  try {
+    // Check the 'links' folder in Firebase
+    const dbUrl = `${env.FIREBASE_DB_URL}/links/${shortCode}.json`;
+    const response = await fetch(dbUrl);
 
-      const slug = body.slug || Math.random().toString(36).substring(2, 8);
-      
-      // === FIX: Save to 'links' folder using 'url' key ===
-      const saveUrl = `${env.FIREBASE_DB_URL}/links/${slug}.json?auth=${env.FIREBASE_DB_SECRET}`;
-      
-      await fetch(saveUrl, {
-        method: 'PUT',
-        body: JSON.stringify({ 
-            url: body.url,        // <--- Uses 'url' key
-            createdAt: Date.now(), 
-            userId: keyData.uid 
-        })
-      });
-
-      // Update Usage
-      await fetch(`${env.FIREBASE_DB_URL}/api_keys/${apiKey}/usage.json?auth=${env.FIREBASE_DB_SECRET}`, {
-        method: 'PUT',
-        body: keyData.usage + 1
-      });
-
-      return new Response(JSON.stringify({
-        status: "success",
-        short_url: `https://jachu.xyz/${slug}`,
-        usage: keyData.usage + 1
-      }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" }
-      });
-
-    } catch (err) {
-      return new Response(JSON.stringify({ error: err.message }), {
-        status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" }
-      });
+    if (!response.ok) {
+       return env.ASSETS.fetch(request); 
     }
-  }
 
-  return new Response("Method Not Allowed", { status: 405, headers: corsHeaders });
+    const data = await response.json();
+
+    // Redirect if we found a URL
+    if (data && data.url) {
+      return Response.redirect(data.url, 302);
+    }
+
+    // If link not found, go to homepage
+    return Response.redirect(url.origin, 302);
+
+  } catch (err) {
+    // If error, just show homepage
+    return env.ASSETS.fetch(request);
+  }
 }
