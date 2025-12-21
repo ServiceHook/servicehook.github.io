@@ -72,6 +72,7 @@ function initAdminPanel() {
   document.getElementById("adminContent").style.display = "flex";
   switchSection('dashboard');
   loadDashboard();
+  checkPendingBills();
 }
 
 function logout() {
@@ -84,6 +85,10 @@ function switchSection(id) {
   document.querySelectorAll('.sidebar li').forEach(li => li.classList.remove('active'));
   const activeNav = document.getElementById('nav-' + id);
   if(activeNav) activeNav.classList.add('active');
+
+  if(id === 'manage') loadLinks();
+  if(id === 'ban') loadBannedUsers();
+  if(id === 'billing') loadBilling();
 }
 
 // --- DASHBOARD & CHARTS ---
@@ -286,4 +291,91 @@ function loadBannedUsers() {
   });
 }
 
-window.onload = () => {};
+// --- BILLING SYSTEM (FIXED STACKING) ---
+function loadBilling() {
+  const tbody = document.querySelector("#billingTable tbody");
+  tbody.innerHTML = "<tr><td colspan='5'>Loading requests...</td></tr>";
+
+  db.ref("payment_requests").once("value").then(snap => {
+    tbody.innerHTML = "";
+    if (!snap.exists()) {
+      tbody.innerHTML = "<tr><td colspan='5' style='text-align:center;'>No pending requests.</td></tr>";
+      return;
+    }
+
+    snap.forEach(child => {
+      const id = child.key;
+      const req = child.val();
+      
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td>
+            <div style="font-weight:bold;">${req.userEmail}</div>
+            <div style="font-size:0.8rem; color:#94a3b8;">UID: ${req.userId.substring(0,6)}...</div>
+        </td>
+        <td>
+            <div style="color:#6366f1;">${req.planName}</div>
+            <div style="font-size:0.8rem; color:#4ade80;">+${req.requestedLimit} Links</div>
+        </td>
+        <td style="font-family:monospace; color:#fbbf24;">${req.txnId}</td>
+        <td style="color:#4ade80; font-weight:bold;">₹${req.amount}</td>
+        <td>
+          <div class="action-group">
+            <button onclick="approvePlan('${id}', '${req.userId}', ${req.requestedLimit})" class="button btn-sm" style="background:#22c55e;">Approve</button>
+            <button onclick="rejectPlan('${id}')" class="button btn-sm btn-danger">Reject</button>
+          </div>
+        </td>
+      `;
+      tbody.appendChild(tr);
+    });
+  });
+}
+
+function approvePlan(reqId, userId, packLimit) {
+  // packLimit is the NEW amount to add (e.g., 219)
+  if(!confirm(`Confirm payment? This will ADD ${packLimit} links to the user's existing limit.`)) return;
+
+  // 1. Find the User's API Key
+  db.ref(`users/${userId}/api_key`).once("value").then(snap => {
+    const apiKey = snap.val();
+    
+    if (!apiKey) {
+      alert("Error: User has not generated an API key yet. Ask them to visit the dashboard once.");
+      return;
+    }
+
+    // 2. FETCH CURRENT LIMIT & STACK
+    const keyRef = db.ref(`api_keys/${apiKey}`);
+    
+    keyRef.once("value").then(keySnap => {
+      const data = keySnap.val() || {};
+      const currentLimit = parseInt(data.limit) || 0; // e.g., 50
+      const amountToAdd = parseInt(packLimit) || 0;   // e.g., 219
+      
+      const newTotal = currentLimit + amountToAdd;    // e.g., 269
+
+      // 3. Update with New Total
+      keyRef.update({ limit: newTotal }).then(() => {
+        // 4. Remove Request
+        db.ref(`payment_requests/${reqId}`).remove();
+        showToast(`Success! Limit upgraded: ${currentLimit} ➝ ${newTotal}`, "success");
+        loadBilling();
+      });
+    });
+  });
+}
+
+function rejectPlan(reqId) {
+  if(confirm("Reject this request?")) {
+    db.ref(`payment_requests/${reqId}`).remove();
+    loadBilling();
+  }
+}
+
+// Check for pending bills
+function checkPendingBills() {
+    db.ref("payment_requests").on("value", snap => {
+        const badge = document.getElementById("billBadge");
+        if(badge) badge.style.display = snap.exists() ? "inline-block" : "none";
+    });
+}

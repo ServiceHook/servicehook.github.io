@@ -4,155 +4,152 @@
     <meta charset="UTF-8">
     <title>Developer Portal | Jachu API</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    
-    <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/file/styles.css" />
 
     <style>
-        /* --- DASHBOARD SPECIFIC STYLES --- */
         body { padding-top: 80px; align-items: flex-start; }
-        
         .dash-container {
-            width: 100%; max-width: 900px; margin: 0 auto;
-            display: grid; grid-template-columns: 1fr 1fr; gap: 30px;
-            padding: 20px;
+            width: 100%; max-width: 1000px; margin: 0 auto;
+            display: grid; grid-template-columns: 1fr 1fr; gap: 30px; padding: 20px;
         }
-
         .full-width { grid-column: 1 / -1; }
-
-        /* Card Headers */
+        
+        /* Headers */
         h2 { font-size: 1.5rem; margin-top: 0; color: white; display: flex; align-items: center; gap: 10px; }
-        .badge { 
-            font-size: 0.75rem; background: rgba(99, 102, 241, 0.2); color: #818cf8; 
-            padding: 4px 8px; border-radius: 6px; border: 1px solid rgba(99, 102, 241, 0.3);
-        }
+        .badge { font-size: 0.75rem; background: rgba(99, 102, 241, 0.2); color: #818cf8; padding: 4px 8px; border-radius: 6px; border: 1px solid rgba(99, 102, 241, 0.3); }
 
-        /* API Key Box */
+        /* API Key Area */
         .key-wrapper {
             position: relative; background: rgba(0,0,0,0.3); border-radius: 12px;
             border: 1px solid var(--border-color); padding: 15px; margin-top: 15px;
-            display: flex; align-items: center; justify-content: space-between;
+            display: flex; align-items: center; justify-content: space-between; gap: 10px;
         }
         .api-key-text {
             font-family: 'Courier New', monospace; font-size: 1.1rem; color: #4ade80;
             letter-spacing: 1px; filter: blur(5px); transition: filter 0.3s; cursor: pointer;
-            user-select: none;
+            user-select: none; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
         }
         .api-key-text.revealed { filter: blur(0); user-select: all; }
-        
-        /* Usage Bar */
-        .usage-track {
-            background: rgba(255,255,255,0.1); height: 10px; width: 100%;
-            border-radius: 5px; margin: 20px 0 10px; overflow: hidden;
-        }
-        .usage-fill {
-            height: 100%; background: linear-gradient(90deg, #6366f1, #a855f7);
-            width: 0%; transition: width 1s ease-in-out;
-        }
 
-        /* Code Blocks */
-        .code-window {
-            background: #0f172a; border-radius: 12px; border: 1px solid var(--border-color);
-            overflow: hidden; margin-top: 15px;
-        }
-        .code-header {
-            background: rgba(255,255,255,0.05); padding: 10px 15px;
-            display: flex; gap: 15px; border-bottom: 1px solid var(--border-color);
-        }
-        .tab {
-            font-size: 0.85rem; color: var(--text-muted); cursor: pointer; padding-bottom: 2px;
-        }
+        /* Buttons */
+        .btn-group { display: flex; gap: 10px; margin-top: 15px; }
+        .btn-outline { background: transparent; border: 1px solid var(--border-color); color: var(--text-muted); }
+        .btn-outline:hover { border-color: var(--primary-accent); color: white; }
+
+        /* Code Block */
+        .code-window { background: #0f172a; border-radius: 12px; border: 1px solid var(--border-color); overflow: hidden; margin-top: 15px; }
+        .code-header { background: rgba(255,255,255,0.05); padding: 10px 15px; display: flex; gap: 15px; border-bottom: 1px solid var(--border-color); }
+        .tab { font-size: 0.85rem; color: var(--text-muted); cursor: pointer; padding-bottom: 2px; }
         .tab.active { color: #fff; border-bottom: 2px solid var(--primary-accent); }
-        
         pre { margin: 0; padding: 20px; overflow-x: auto; color: #e2e8f0; font-size: 0.9rem; }
-        .token.method { color: #f472b6; }
-        .token.url { color: #4ade80; }
-        .token.header { color: #60a5fa; }
+        .token.method { color: #f472b6; } .token.url { color: #4ade80; } .token.header { color: #60a5fa; } .token.comment { color: #64748b; }
 
-        /* Auth Screen */
-        .auth-overlay {
-            position: fixed; inset: 0; background: var(--bg-dark); z-index: 50;
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-        }
+        /* Pricing & Tables */
+        .pricing-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-top: 20px; }
+        .plan-card { background: rgba(255,255,255,0.03); border: 1px solid var(--border-color); padding: 20px; border-radius: 16px; text-align: center; cursor: pointer; transition: 0.2s; }
+        .plan-card:hover, .plan-card.selected { background: rgba(99, 102, 241, 0.1); border-color: var(--primary-accent); transform: translateY(-3px); }
+        .table-container { width: 100%; overflow-x: auto; margin-top: 15px; }
+        table { width: 100%; border-collapse: collapse; min-width: 500px; }
+        th { text-align: left; padding: 12px; color: var(--text-muted); font-size: 0.85rem; background: rgba(0,0,0,0.2); }
+        td { padding: 12px; border-bottom: 1px solid var(--border-color); font-size: 0.9rem; }
+        
+        .usage-track { background: rgba(255,255,255,0.1); height: 10px; width: 100%; border-radius: 5px; margin: 20px 0 10px; overflow: hidden; }
+        .usage-fill { height: 100%; background: linear-gradient(90deg, #6366f1, #a855f7); width: 0%; transition: width 1s; }
 
-        @media (max-width: 768px) {
-            .dash-container { grid-template-columns: 1fr; }
-        }
+        @media (max-width: 768px) { .dash-container { grid-template-columns: 1fr; } }
     </style>
 </head>
 <body>
 
-    <div id="auth-check" class="auth-overlay">
+    <div id="auth-check" style="position:fixed; inset:0; background:var(--bg-dark); z-index:50; display:flex; flex-direction:column; align-items:center; justify-content:center;">
         <div class="shortener-box" style="text-align: center; max-width: 400px;">
             <h2>🔐 Developer Access</h2>
-            <p style="color: var(--text-muted); margin-bottom: 20px;">
-                You must be logged in to access your API keys and documentation.
-            </p>
             <a href="/index.html" class="button">Log In / Sign Up</a>
         </div>
     </div>
 
     <div class="main-container">
-        <h1 class="title" style="margin-bottom: 10px;">Developer Portal</h1>
-        <p style="text-align: center; color: var(--text-muted); margin-bottom: 40px;">
-            Integrate Jachu shortening into your own applications.
-        </p>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <h1 class="title" style="margin:0; font-size: 2rem;">Developer Console</h1>
+            <a href="/index.html" class="button" style="width: auto; padding: 10px 20px;">← Home</a>
+        </div>
 
         <div class="dash-container">
             
             <div class="shortener-box">
-                <h2>🔑 API Credentials <span class="badge">Active</span></h2>
-                <p style="font-size: 0.9rem; color: var(--text-muted);">
-                    Include this key in the <code>X-API-Key</code> header of your requests. Keep it secret!
-                </p>
-                
+                <h2>🔑 API Key <span id="planBadge" class="badge">Loading...</span></h2>
                 <div class="key-wrapper">
-                    <span id="apiKeyDisplay" class="api-key-text" onclick="toggleReveal()">
-                        ••••••••••••••••••••••••••••••••
-                    </span>
-                    <button class="button" style="width: auto; padding: 8px 15px; font-size: 0.8rem;" onclick="copyKey()">
-                        Copy
-                    </button>
+                    <span id="apiKeyDisplay" class="api-key-text" onclick="toggleReveal()">••••••••••••••••••••••••••••••••</span>
+                    <button class="button" style="width: auto; padding: 8px;" onclick="copyKey()">Copy</button>
                 </div>
-
-                <div style="margin-top: 20px;">
-                    <button id="genBtn" class="button" onclick="generateOrRevealKey()">🔄 Loading Key...</button>
+                
+                <div class="usage-track"><div id="usageBar" class="usage-fill"></div></div>
+                <div style="display: flex; justify-content: space-between;">
+                    <span id="usageCount">0 used</span>
+                    <span id="limitCount">50 limit</span>
+                </div>
+                
+                <div class="btn-group">
+                    <button id="genBtn" class="button btn-outline" onclick="generateKey(false)">🔄 Sync Key</button>
+                    <button class="button btn-outline" onclick="if(confirm('Revoke old key and generate new? Your limit will be preserved.')) generateKey(true)">⚠️ Regenerate</button>
                 </div>
             </div>
 
             <div class="shortener-box">
-                <h2>📊 Monthly Usage <span class="badge">Free Tier</span></h2>
-                <p style="font-size: 0.9rem; color: var(--text-muted);">
-                    Requests reset on the 1st of every month.
-                </p>
-
-                <div class="usage-track">
-                    <div id="usageBar" class="usage-fill"></div>
+                <h2>🚀 Add Links</h2>
+                <p style="color:var(--text-muted); font-size:0.9rem;">Packs stack (e.g., 50 + 219 = 269 limit).</p>
+                <div class="pricing-grid">
+                    <div class="plan-card" onclick="selectPlan(199, 219, 'Basic Pro')">
+                        <div style="font-weight:700;">+219 Links</div>
+                        <div style="font-size:1.2rem; color:#4ade80;">₹199</div>
+                    </div>
+                    <div class="plan-card" onclick="selectPlan(399, 450, 'Standard')">
+                        <div style="font-weight:700;">+450 Links</div>
+                        <div style="font-size:1.2rem; color:#4ade80;">₹399</div>
+                    </div>
+                    <div class="plan-card" onclick="selectPlan(599, 700, 'Premium')">
+                        <div style="font-weight:700;">+700 Links</div>
+                        <div style="font-size:1.2rem; color:#4ade80;">₹599</div>
+                    </div>
+                    <div class="plan-card" onclick="toggleCustomPlan()">
+                        <div>Custom</div>
+                        <div style="font-size:0.9rem;">>701 Links</div>
+                    </div>
                 </div>
-                
-                <div style="display: flex; justify-content: space-between; font-weight: 600;">
-                    <span id="usageCount">0 used</span>
-                    <span style="color: var(--text-muted);">50 limit</span>
+
+                <div id="customPlanInput" style="display:none; margin-top:15px; background:rgba(255,255,255,0.05); padding:10px; border-radius:8px;">
+                    <input type="number" id="customLimit" class="input" placeholder="e.g. 1000" oninput="calcCustomPrice()">
+                    <div id="customPriceResult" style="text-align:right; font-weight:bold; color:#4ade80;">₹0</div>
+                    <button onclick="selectCustomPlan()" class="button" style="margin-top:5px;">Select</button>
                 </div>
 
-                <p style="font-size: 0.8rem; color: #ef4444; margin-top: 15px; display: none;" id="limitWarning">
-                    ⚠️ You have reached your monthly limit.
-                </p>
+                <div id="paymentSection" style="display:none; margin-top:20px; border-top:1px solid var(--border-color); padding-top:20px;">
+                    <h3 style="margin:0;">💰 Payment</h3>
+                    <p id="selPlanDetail" style="color:#94a3b8; margin-bottom:10px;"></p>
+                    <div style="background:#0f172a; padding:10px; border:1px dashed #6366f1; text-align:center; margin-bottom:10px;">UPI: jachu.xyz@axl</div>
+                    <input type="text" id="txnId" class="input" placeholder="Enter Transaction ID" />
+                    <button onclick="submitPayment()" class="button" id="payBtn">Submit Request</button>
+                </div>
             </div>
 
             <div class="shortener-box full-width">
-                <h2>🚀 Quick Integration</h2>
-                <p style="color: var(--text-muted);">Send a POST request to create a short link.</p>
+                <h2>📚 Implementation Guide</h2>
+                <div style="color: var(--text-muted); margin-bottom: 20px;">
+                    <p><strong>Step 1:</strong> Generate your API Key above.</p>
+                    <p><strong>Step 2:</strong> Send a POST request to <code>https://jachu.xyz/api/create</code>.</p>
+                    <p><strong>Step 3:</strong> Include <code>X-API-Key</code> in headers and <code>{ "url": "..." }</code> in body.</p>
+                </div>
 
                 <div class="code-window">
                     <div class="code-header">
                         <span class="tab active" onclick="showTab('js')">JavaScript (Fetch)</span>
                         <span class="tab" onclick="showTab('curl')">cURL</span>
+                        <span class="tab" onclick="showTab('py')">Python</span>
                     </div>
                     
                     <div id="code-js">
-<pre><code><span class="token method">const</span> createLink = <span class="token method">async</span> () => {
+<pre><code><span class="token method">const</span> shorten = <span class="token method">async</span> (longUrl) => {
   <span class="token method">const</span> res = <span class="token method">await</span> fetch('<span class="token url">https://jachu.xyz/api/create</span>', {
     method: '<span class="token method">POST</span>',
     headers: {
@@ -160,13 +157,17 @@
       '<span class="token header">X-API-Key</span>': '<span style="color:#fca5a5;">YOUR_API_KEY</span>'
     },
     body: JSON.stringify({ 
-      url: 'https://example.com/my-long-link',
-      slug: 'custom-alias' <span style="color:#64748b;">// Optional</span>
+      url: longUrl,
+      slug: 'my-alias' <span class="token comment">// Optional custom alias</span>
     })
   });
 
   <span class="token method">const</span> data = <span class="token method">await</span> res.json();
-  console.log(data.short_url);
+  if (data.status === 'success') {
+     console.log('Short Link:', data.short_url);
+  } else {
+     console.error('Error:', data.message);
+  }
 };</code></pre>
                     </div>
 
@@ -174,11 +175,32 @@
 <pre><code>curl -X <span class="token method">POST</span> <span class="token url">https://jachu.xyz/api/create</span> \
   -H "Content-Type: application/json" \
   -H "<span class="token header">X-API-Key</span>: <span style="color:#fca5a5;">YOUR_API_KEY</span>" \
-  -d '{
-    "url": "https://google.com",
-    "slug": "my-google"
-  }'</code></pre>
+  -d '{ "url": "https://example.com" }'</code></pre>
                     </div>
+                    
+                    <div id="code-py" style="display: none;">
+<pre><code>import requests
+
+api_url = "<span class="token url">https://jachu.xyz/api/create</span>"
+headers = {
+    "<span class="token header">X-API-Key</span>": "<span style="color:#fca5a5;">YOUR_API_KEY</span>",
+    "Content-Type": "application/json"
+}
+payload = { "url": "https://example.com" }
+
+response = requests.post(api_url, json=payload, headers=headers)
+print(response.json())</code></pre>
+                    </div>
+                </div>
+            </div>
+
+            <div class="shortener-box full-width">
+                <h2>🤖 API Generated Links</h2>
+                <div class="table-container">
+                    <table id="apiLinkTable">
+                        <thead><tr><th>Alias</th><th>URL</th><th>Date</th><th>Action</th></tr></thead>
+                        <tbody><tr><td colspan="4">Loading...</td></tr></tbody>
+                    </table>
                 </div>
             </div>
 
@@ -187,9 +209,10 @@
 
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
 
     <script>
-        // 1. CONFIG
+        // CONFIG
         const firebaseConfig = {
             apiKey: "AIzaSyBKA3bxy1caa0QiGrn6AihtxufiO7xxTnI",
             authDomain: "futrshortener-7acf0.firebaseapp.com",
@@ -199,109 +222,154 @@
         };
         firebase.initializeApp(firebaseConfig);
         const auth = firebase.auth();
+        const db = firebase.database();
 
+        let currentUser = null;
         let currentKey = "";
+        let selectedPlan = null;
 
-        // 2. AUTH STATE
         auth.onAuthStateChanged(user => {
             if (user) {
+                currentUser = user;
                 document.getElementById('auth-check').style.display = 'none';
-                generateOrRevealKey(); 
+                generateKey(false);
+                fetchApiLinks(user.uid);
             } else {
                 document.getElementById('auth-check').style.display = 'flex';
             }
         });
 
-        // 3. FETCH KEY & REAL USAGE
-        async function generateOrRevealKey() {
-            const user = auth.currentUser;
-            if (!user) return;
-
+        // 1. KEY LOGIC (SYNC & REGENERATE)
+        async function generateKey(forceNew) {
             const btn = document.getElementById('genBtn');
             const keyDisplay = document.getElementById('apiKeyDisplay');
-            
-            btn.innerText = "Syncing...";
-            btn.disabled = true;
+            if(btn) btn.disabled = true;
 
             try {
-                const token = await user.getIdToken();
-                
-                // Call backend
+                const token = await currentUser.getIdToken();
+                // Send 'regenerate: true' if forceNew is true
                 const response = await fetch('/api/generate_key', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ token: token })
+                    body: JSON.stringify({ token: token, regenerate: forceNew })
                 });
 
                 const data = await response.json();
-
                 if (data.status === 'success') {
-                    // Update Key UI
                     currentKey = data.api_key;
                     keyDisplay.innerText = currentKey; 
-                    btn.style.display = 'none';
-                    
-                    // Update Usage UI with REAL data from backend
                     updateUsageUI(data.usage, data.limit);
-
                 } else {
                     alert("Error: " + data.error);
-                    btn.innerText = "Retry";
-                    btn.disabled = false;
                 }
-            } catch (e) {
-                console.error(e);
-                alert("Network error.");
-                btn.innerText = "Retry";
-                btn.disabled = false;
-            }
+            } catch (e) { console.error(e); }
+            if(btn) btn.disabled = false;
         }
 
         function updateUsageUI(usage, limit) {
-            usage = usage || 0;
-            limit = limit || 50;
-            
+            usage = usage || 0; limit = limit || 50;
             const percent = Math.min((usage / limit) * 100, 100);
-            
             document.getElementById('usageCount').innerText = `${usage} used`;
+            document.getElementById('limitCount').innerText = `${limit} limit`;
             document.getElementById('usageBar').style.width = `${percent}%`;
+            document.getElementById('planBadge').innerText = limit > 50 ? "PRO Plan" : "Free Plan";
+        }
+
+        // 2. PAYMENT & PLAN
+        function selectPlan(price, limit, name) {
+            selectedPlan = { price, limit, name };
+            document.getElementById('customPlanInput').style.display = 'none';
+            document.getElementById('paymentSection').style.display = 'block';
+            document.getElementById('selPlanDetail').innerText = `Selected: ${name} (+${limit} Links) for ₹${price}`;
             
-            // Visual warning if limit reached
-            if(usage >= limit) {
-                document.getElementById('usageBar').style.background = '#ef4444';
-                document.getElementById('limitWarning').style.display = 'block';
-            } else {
-                // Reset colors if under limit (in case of month reset)
-                document.getElementById('usageBar').style.background = 'linear-gradient(90deg, #6366f1, #a855f7)';
-                document.getElementById('limitWarning').style.display = 'none';
-            }
+            document.querySelectorAll('.plan-card').forEach(c => c.classList.remove('selected'));
+            event.currentTarget.classList.add('selected');
         }
 
-        // 4. UI INTERACTIONS
-        function toggleReveal() {
-            document.getElementById('apiKeyDisplay').classList.toggle('revealed');
+        function toggleCustomPlan() {
+            const el = document.getElementById('customPlanInput');
+            el.style.display = el.style.display === 'none' ? 'block' : 'none';
+            document.getElementById('paymentSection').style.display = 'none';
         }
 
-        function copyKey() {
-            if(!currentKey) return;
-            navigator.clipboard.writeText(currentKey).then(() => {
-                const btn = document.querySelector('.key-wrapper button');
-                const oldText = btn.innerText;
-                btn.innerText = "Copied!";
-                btn.style.background = "#22c55e";
-                setTimeout(() => {
-                    btn.innerText = oldText;
-                    btn.style.background = "";
-                }, 2000);
+        function calcCustomPrice() {
+            const val = parseInt(document.getElementById('customLimit').value) || 0;
+            if (val <= 700) { document.getElementById('customPriceResult').innerText = "Must be > 701"; return; }
+            const price = Math.ceil(599 + (val - 700) * 0.75);
+            document.getElementById('customPriceResult').innerText = `₹${price}`;
+            return { price, limit: val };
+        }
+
+        function selectCustomPlan() {
+            const calc = calcCustomPrice();
+            if(!calc || calc.limit <= 700) return alert("Invalid amount");
+            selectPlan(calc.price, calc.limit, "Custom Pack");
+        }
+
+        function submitPayment() {
+            const txnId = document.getElementById('txnId').value.trim();
+            if(!txnId || !selectedPlan) return alert("Details missing");
+            const btn = document.getElementById('payBtn');
+            btn.innerText = "Submitting..."; btn.disabled = true;
+
+            db.ref('payment_requests').push({
+                userId: currentUser.uid,
+                userEmail: currentUser.email,
+                txnId: txnId,
+                planName: selectedPlan.name,
+                requestedLimit: selectedPlan.limit,
+                amount: selectedPlan.price,
+                timestamp: Date.now()
+            }).then(() => {
+                alert("Request Sent! Admin will approve shortly.");
+                location.reload();
             });
         }
 
-        function showTab(tab) {
+        // 3. API LINKS TABLE (FILTERED)
+        function fetchApiLinks(uid) {
+            db.ref("links").orderByChild("userId").equalTo(uid).once("value").then(snap => {
+                const tbody = document.querySelector("#apiLinkTable tbody");
+                tbody.innerHTML = "";
+                if (!snap.exists()) { tbody.innerHTML = "<tr><td colspan='4'>No API links yet.</td></tr>"; return; }
+
+                const rows = [];
+                snap.forEach(c => {
+                    const d = c.val();
+                    // FILTER: Only show source = 'api'
+                    if (d.source === 'api') {
+                        rows.unshift({ key: c.key, ...d }); // Newest first
+                    }
+                });
+
+                if(rows.length === 0) { tbody.innerHTML = "<tr><td colspan='4'>No API links found.</td></tr>"; return; }
+
+                rows.forEach(r => {
+                    const tr = document.createElement("tr");
+                    tr.innerHTML = `
+                        <td><span style="color:#818cf8; font-family:monospace;">${r.key}</span></td>
+                        <td><a href="${r.url}" target="_blank" style="color:white;">${r.url.substring(0,30)}...</a></td>
+                        <td style="color:#94a3b8; font-size:0.8rem;">${new Date(r.createdAt).toLocaleDateString()}</td>
+                        <td><button onclick="delLink('${r.key}')" style="background:#ef4444; border:none; color:white; padding:4px 8px; border-radius:4px; cursor:pointer;">🗑️</button></td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            });
+        }
+
+        function delLink(alias) {
+            if(confirm("Delete this link?")) {
+                db.ref(`links/${alias}`).remove().then(() => fetchApiLinks(currentUser.uid));
+            }
+        }
+
+        // UI Utilities
+        function toggleReveal() { document.getElementById('apiKeyDisplay').classList.toggle('revealed'); }
+        function copyKey() { navigator.clipboard.writeText(currentKey); alert("Key Copied"); }
+        function showTab(id) {
             document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-            document.querySelector(`.tab[onclick="showTab('${tab}')"]`).classList.add('active');
-            
-            document.getElementById('code-js').style.display = tab === 'js' ? 'block' : 'none';
-            document.getElementById('code-curl').style.display = tab === 'curl' ? 'block' : 'none';
+            document.querySelector(`.tab[onclick="showTab('${id}')"]`).classList.add('active');
+            ['js','curl','py'].forEach(t => document.getElementById(`code-${t}`).style.display = t===id?'block':'none');
         }
     </script>
 </body>

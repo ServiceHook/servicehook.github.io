@@ -34,6 +34,7 @@
       <ul>
         <li onclick="switchSection('dashboard')" id="nav-dashboard" class="active">📊 Dashboard</li>
         <li onclick="switchSection('manage')" id="nav-manage">🔗 Manage Links</li>
+        <li onclick="switchSection('billing')" id="nav-billing">💰 Billing <span id="billBadge" style="background:red; color:white; font-size:0.7rem; padding:2px 5px; border-radius:10px; display:none;">!</span></li>
         <li onclick="switchSection('ban')" id="nav-ban">🚫 Banned Users</li>
         <li onclick="logout()" style="margin-top: auto; color: #ef4444;">🚪 Logout</li>
       </ul>
@@ -92,6 +93,24 @@
           <span id="pageInfo" style="color: var(--text-muted); font-size: 0.9rem;">Page 1</span>
           <button onclick="showNextBatch()" class="button btn-sm">Next ➡</button>
         </div>
+      </div>
+
+      <div id="billing" class="section hidden">
+        <h2>💰 Payment Requests</h2>
+        <p style="color: var(--text-muted);">Approve Plan Upgrades here.</p>
+        
+        <table id="billingTable">
+            <thead>
+                <tr>
+                    <th>User</th>
+                    <th>Plan</th>
+                    <th>Txn ID</th>
+                    <th>Amount</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
       </div>
 
       <div id="ban" class="section hidden">
