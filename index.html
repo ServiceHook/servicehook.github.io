@@ -50,9 +50,13 @@
     
     <div class="sidebar-footer">
       <a href="/api/dashboard.html" class="button" style="margin-bottom: 10px; text-align: center; text-decoration: none; display: block; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);">⚡ Developer API</a>
-      <button class="button" onclick="signOut()" style="background: #ef4444; width: 100%;">Sign Out</button>
+      
+      <button id="mobileLoginBtn" class="button" onclick="toggleAuthModal(); closeSidebar()" style="width: 100%;">Login / Sign Up</button>
+      
+      <button id="mobileSignoutBtn" class="button" onclick="signOut()" style="background: #ef4444; width: 100%; display: none;">Sign Out</button>
     </div>
-  </div>
+
+    </div>
 
   <div class="main-container">
     <h1 class="title">Shorten Your Links</h1>

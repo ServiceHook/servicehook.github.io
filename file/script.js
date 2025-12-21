@@ -46,7 +46,12 @@ auth.onAuthStateChanged(user => {
   currentUser = user;
   const userDisplay = document.getElementById("userIdDisplay");
   
+  // --- NEW: References to Mobile Sidebar Buttons ---
+  const mobileLogin = document.getElementById("mobileLoginBtn");
+  const mobileSignout = document.getElementById("mobileSignoutBtn");
+  
   if (user) {
+    // 1. HEADER (Desktop)
     if(userDisplay) userDisplay.innerHTML = `👋 Hi, ${user.email.split('@')[0]}`;
     const loginBtn = document.querySelector('button[onclick="toggleAuthModal()"]');
     const signoutBtn = document.querySelector('button[onclick="signOut()"]');
@@ -54,10 +59,17 @@ auth.onAuthStateChanged(user => {
     if(loginBtn) loginBtn.style.display = "none";
     if(signoutBtn) signoutBtn.style.display = "inline-block";
     
+    // 2. SIDEBAR (Mobile) - Show Sign Out, Hide Login
+    if(mobileLogin) mobileLogin.style.display = "none";
+    if(mobileSignout) mobileSignout.style.display = "block";
+
+    // 3. DATA
     const emailEl = document.getElementById("userEmail");
     if(emailEl) emailEl.textContent = user.email;
     fetchUserLinks(user.uid);
+
   } else {
+    // 1. HEADER (Desktop)
     if(userDisplay) userDisplay.innerHTML = "";
     const loginBtn = document.querySelector('button[onclick="toggleAuthModal()"]');
     const signoutBtn = document.querySelector('button[onclick="signOut()"]');
@@ -65,6 +77,11 @@ auth.onAuthStateChanged(user => {
     if(loginBtn) loginBtn.style.display = "inline-block";
     if(signoutBtn) signoutBtn.style.display = "none";
     
+    // 2. SIDEBAR (Mobile) - Show Login, Hide Sign Out
+    if(mobileLogin) mobileLogin.style.display = "block";
+    if(mobileSignout) mobileSignout.style.display = "none";
+    
+    // 3. DATA
     const linksList = document.getElementById("userLinksList");
     if(linksList) linksList.innerHTML = "";
     const emailEl = document.getElementById("userEmail");
