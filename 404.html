@@ -81,9 +81,11 @@
 
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
+    
+    // Get the alias from the URL (e.g. jachu.xyz/mylink -> mylink)
     const alias = window.location.pathname.replace("/", "").trim();
 
-    // DOM Elements
+    // UI Elements
     const el = {
       load: document.getElementById('loadingCard'),
       pass: document.getElementById('passwordCard'),
@@ -93,27 +95,43 @@
       errMsg: document.getElementById('errorMsg')
     };
 
-    if (!alias) {
-      showError("No alias provided.");
+    function showError(msg) {
+      if(el.load) el.load.classList.add('hidden');
+      if(el.pass) el.pass.classList.add('hidden');
+      if(el.err) {
+        el.err.classList.remove('hidden');
+        if(el.errText) el.errText.innerText = msg;
+      }
+    }
+
+    // Main Logic
+    if (!alias || alias === "404.html") {
+      showError("Page not found.");
     } else {
       db.ref("links/" + alias).once("value").then(snapshot => {
-        if (!snapshot.exists()) return showError("Link does not exist.");
+        if (!snapshot.exists()) {
+          showError("Link not found or deleted.");
+          return;
+        }
 
         const data = snapshot.val();
         const { url, password } = data;
 
-        if (!url) return showError("Invalid link data.");
+        if (!url) {
+          showError("Invalid link configuration.");
+          return;
+        }
 
-        // Password Check
+        // --- PASSWORD CHECK ---
         if (password && password !== "null") {
-          // Show Password UI
+          // Show Password Input
           el.load.classList.add('hidden');
           el.pass.classList.remove('hidden');
           
           window.targetUrl = url;
           window.correctPass = password;
         } else {
-          // No Password - Redirect
+          // No Password? Redirect Immediately
           performRedirect(url);
         }
       });
@@ -123,7 +141,7 @@
       const inputVal = el.input.value.trim();
       if (inputVal === window.correctPass) {
         el.pass.classList.add('hidden');
-        el.load.classList.remove('hidden'); // Show loading again
+        el.load.classList.remove('hidden'); // Show spinner again
         performRedirect(window.targetUrl);
       } else {
         el.errMsg.innerText = "❌ Incorrect password";
@@ -133,15 +151,8 @@
     }
 
     function performRedirect(url) {
-      // Optional: Log analytics here before redirecting
+      // Analytics can go here
       window.location.replace(url);
-    }
-
-    function showError(msg) {
-      el.load.classList.add('hidden');
-      el.pass.classList.add('hidden');
-      el.err.classList.remove('hidden');
-      el.errText.innerText = msg;
     }
   </script>
 </body>
