@@ -10,24 +10,22 @@
   </script>
   <meta name="google-adsense-account" content="ca-pub-5931219908100170">
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>Jachu | Professional URL Shortener</title>
   
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="manifest" href="/manifest.json">
-<meta name="theme-color" content="#020617">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  
   <link rel="stylesheet" href="/file/styles.css" />
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#020617">
 </head>
 <body>
 
   <div id="authButtons">
     <div id="userIdDisplay" style="color: #94a3b8; font-size: 0.9rem; margin-right: 8px;"></div>
-    
     <a href="/api/dashboard.html" class="button" style="background: transparent; border: none; box-shadow: none; color: #a5b4fc;">Developers</a>
-    
     <a href="legal.html" class="button" style="background: transparent; border: none; box-shadow: none;">Legal</a>
     <button class="button" onclick="toggleAuthModal()">Login</button>
     <button class="button" onclick="signOut()" style="display: none;">Sign Out</button>
@@ -42,21 +40,16 @@
   <div id="sidebar" class="sidebar">
     <div class="sidebar-header">
       <h2>👤 My Links</h2>
-      <button class="close-btn" onclick="closeSidebar()">
-        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-      </button>
+      <button class="close-btn" onclick="closeSidebar()">✕</button>
     </div>
 
     <div class="sidebar-content">
       <p id="userEmail" style="font-size: 0.85rem; color: #6366f1; margin-bottom: 20px;"></p>
-      
-      <div id="userLinksList" style="display: flex; flex-direction: column;">
-        </div>
+      <div id="userLinksList" style="display: flex; flex-direction: column;"></div>
     </div>
     
     <div class="sidebar-footer">
       <a href="/api/dashboard.html" class="button" style="margin-bottom: 10px; text-align: center; text-decoration: none; display: block; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);">⚡ Developer API</a>
-      
       <button class="button" onclick="signOut()" style="background: #ef4444; width: 100%;">Sign Out</button>
     </div>
   </div>
@@ -96,9 +89,12 @@
       <h2 style="margin-top:0; margin-bottom: 20px; color: white;">Welcome Back</h2>
       <input id="email" placeholder="Email Address" class="input" type="email" style="margin-bottom: 10px;" />
       <input id="password" placeholder="Password" class="input" type="password" style="margin-bottom: 20px;" />
+      
       <button class="button" id="loginBtn" onclick="signIn()" style="margin-bottom: 10px;">Log In</button>
       <button class="button" id="signupBtn" onclick="signUp()" style="background: transparent; border: 1px solid rgba(255,255,255,0.2);">Create Account</button>
-      <button id="resetBtn" onclick="resetPassword()" disabled style="background:none; border:none; color:#94a3b8; margin-top:15px; cursor:pointer;">Forgot Password?</button>
+      
+      <button id="resetBtn" onclick="resetPassword()" style="background:none; border:none; color:#94a3b8; margin-top:15px; cursor:pointer;">Forgot Password?</button>
+      
       <div style="margin-top: 20px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 15px;">
         <button onclick="toggleAuthModal()" style="background: none; border: none; color: #ef4444; cursor: pointer;">Close</button>
       </div>
@@ -118,20 +114,12 @@
       const sidebar = document.getElementById('sidebar');
       const overlay = document.getElementById('overlay');
       const isOpen = sidebar.classList.contains('open');
-      
-      if (isOpen) {
-        closeSidebar();
-      } else {
-        sidebar.classList.add('open');
-        overlay.classList.add('active');
-      }
+      if (isOpen) { closeSidebar(); } else { sidebar.classList.add('open'); overlay.classList.add('active'); }
     }
-
     function closeSidebar() {
       document.getElementById('sidebar').classList.remove('open');
       document.getElementById('overlay').classList.remove('active');
     }
   </script>
-
 </body>
 </html>

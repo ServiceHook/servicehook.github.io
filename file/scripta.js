@@ -11,6 +11,25 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
+// --- TOAST SYSTEM ---
+function showToast(message, type = 'neutral') {
+  let container = document.querySelector('.toast-container');
+  if (!container) {
+    container = document.createElement('div');
+    container.className = 'toast-container';
+    document.body.appendChild(container);
+  }
+  const toast = document.createElement('div');
+  toast.className = `toast ${type}`;
+  toast.innerHTML = `<span class="toast-msg">${message}</span>`;
+  container.appendChild(toast);
+  requestAnimationFrame(() => toast.classList.add('show'));
+  setTimeout(() => {
+    toast.classList.remove('show');
+    setTimeout(() => toast.remove(), 400);
+  }, 4000);
+}
+
 // --- AUTH ---
 function login() {
   const email = document.getElementById("username").value;
@@ -22,15 +41,15 @@ function login() {
 
   firebase.auth().signInWithEmailAndPassword(email, password)
     .then(userCred => {
-      const user = userCred.user;
-      if (user.email !== "ztenkammu@gmail.com") {
-        document.getElementById("loginError").innerText = "❌ Access Denied: Not an Admin";
+      if (userCred.user.email !== "ztenkammu@gmail.com") {
+        showToast("Access Denied: Not an Admin", "error");
         firebase.auth().signOut();
       } else {
         initAdminPanel();
       }
     })
     .catch(err => {
+      showToast(err.message, "error");
       document.getElementById("loginError").innerText = "❌ " + err.message;
     })
     .finally(() => {
@@ -102,36 +121,23 @@ function loadDashboard() {
       list.appendChild(li);
     });
 
-    // 3. Render Growth Chart
-    renderGrowthChart(values);
+    if(window.Chart) renderGrowthChart(values);
   });
 }
 
 function renderGrowthChart(links) {
   const ctx = document.getElementById('growthChart').getContext('2d');
-  
-  // Prepare labels (Last 7 days)
   const labels = [];
   const dataPoints = [];
-  
   for (let i = 6; i >= 0; i--) {
-    const d = new Date();
-    d.setDate(d.getDate() - i);
-    const dateStr = d.toDateString();
-    
+    const d = new Date(); d.setDate(d.getDate() - i);
     labels.push(d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }));
-    
-    // Count links for this day
-    const count = links.filter(l => new Date(l.createdAt).toDateString() === dateStr).length;
-    dataPoints.push(count);
+    dataPoints.push(links.filter(l => new Date(l.createdAt).toDateString() === d.toDateString()).length);
   }
 
-  // Destroy old chart if exists (prevents glitch on reload)
   if (growthChartInstance) growthChartInstance.destroy();
-
-  // Create Gradient
   const gradient = ctx.createLinearGradient(0, 0, 0, 400);
-  gradient.addColorStop(0, 'rgba(99, 102, 241, 0.5)'); // Primary Accent
+  gradient.addColorStop(0, 'rgba(99, 102, 241, 0.5)');
   gradient.addColorStop(1, 'rgba(99, 102, 241, 0.0)');
 
   growthChartInstance = new Chart(ctx, {
@@ -139,38 +145,17 @@ function renderGrowthChart(links) {
     data: {
       labels: labels,
       datasets: [{
-        label: 'New Links',
-        data: dataPoints,
-        borderColor: '#6366f1',
-        backgroundColor: gradient,
-        borderWidth: 2,
-        pointBackgroundColor: '#fff',
-        pointBorderColor: '#6366f1',
-        fill: true,
-        tension: 0.4 // Curve the lines
+        label: 'New Links', data: dataPoints, borderColor: '#6366f1',
+        backgroundColor: gradient, borderWidth: 2, pointBackgroundColor: '#fff',
+        fill: true, tension: 0.4
       }]
     },
     options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      plugins: {
-        legend: { display: false },
-        tooltip: {
-          mode: 'index', intersect: false,
-          backgroundColor: 'rgba(15, 23, 42, 0.9)',
-          titleColor: '#fff', bodyColor: '#cbd5e1', borderColor: 'rgba(255,255,255,0.1)', borderWidth: 1
-        }
-      },
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
       scales: {
-        y: {
-          beginAtZero: true,
-          grid: { color: 'rgba(255, 255, 255, 0.05)' },
-          ticks: { color: '#94a3b8', precision: 0 }
-        },
-        x: {
-          grid: { display: false },
-          ticks: { color: '#94a3b8' }
-        }
+        y: { beginAtZero: true, grid: { color: 'rgba(255, 255, 255, 0.05)' }, ticks: { color: '#94a3b8' } },
+        x: { grid: { display: false }, ticks: { color: '#94a3b8' } }
       }
     }
   });
@@ -198,44 +183,36 @@ function renderBatch() {
     db.ref("clicks/" + alias).once("value").then(clickSnap => {
       const tr = document.createElement("tr");
       const clicks = clickSnap.exists() ? Object.keys(clickSnap.val()).length : 0;
-      
       tr.innerHTML = `
         <td><strong>${alias}</strong></td>
-        <td><a href="${info.url}" target="_blank">${info.url.substring(0, 50)}${info.url.length > 50 ? '...' : ''}</a></td>
+        <td><a href="${info.url}" target="_blank">${info.url.substring(0, 30)}...</a></td>
         <td>${clicks}</td>
         <td>
           <div class="action-group">
             <button onclick="showDetails('${alias}', this)" class="button btn-sm">📈</button>
             <button onclick="deleteLink('${alias}')" class="button btn-sm btn-danger">🗑️</button>
-            <button onclick="banUser('${info.userEmail || ''}')" class="button btn-sm btn-danger" title="Ban Creator">🚫</button>
+            <button onclick="banUser('${info.userEmail || ''}')" class="button btn-sm btn-danger">🚫</button>
           </div>
         </td>
       `;
       tbody.appendChild(tr);
     });
   });
-
   document.getElementById("pageInfo").innerText = `Page ${Math.floor(currentIndex / pageSize) + 1}`;
 }
 
 function showNextBatch() {
-  if (currentIndex + pageSize < allLinks.length) {
-    currentIndex += pageSize;
-    renderBatch();
-  }
+  if (currentIndex + pageSize < allLinks.length) { currentIndex += pageSize; renderBatch(); }
 }
-
 function showPrevBatch() {
-  if (currentIndex >= pageSize) {
-    currentIndex -= pageSize;
-    renderBatch();
-  }
+  if (currentIndex >= pageSize) { currentIndex -= pageSize; renderBatch(); }
 }
 
 function deleteLink(alias) {
   if (confirm("Delete " + alias + "?")) {
     db.ref("links/" + alias).remove();
     db.ref("clicks/" + alias).remove();
+    showToast("Link deleted", "success");
     loadLinks();
   }
 }
@@ -243,9 +220,7 @@ function deleteLink(alias) {
 function showDetails(alias, btn) {
   const row = btn.closest("tr");
   let nextRow = row.nextElementSibling;
-  if (nextRow && nextRow.classList.contains("details-row")) {
-    nextRow.remove(); return;
-  }
+  if (nextRow && nextRow.classList.contains("details-row")) { nextRow.remove(); return; }
 
   db.ref("clicks/" + alias).once("value").then(snap => {
     const clicks = snap.val();
@@ -253,21 +228,15 @@ function showDetails(alias, btn) {
     detailRow.className = "details-row";
     const td = document.createElement("td");
     td.colSpan = 4;
-
-    if (!clicks) {
-      td.innerHTML = "<div class='detail-box'><em>No click data available yet.</em></div>";
-    } else {
-      td.innerHTML = Object.values(clicks).map(c => `
-        <div class="detail-box">
-          <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
-            <div><b>📅 Time:</b> ${new Date(c.timestamp).toLocaleString()}</div>
-            <div><b>🌍 Loc:</b> ${c.city || '?'}, ${c.country || 'N/A'}</div>
-            <div><b>📱 Device:</b> ${c.device || 'Unknown'}</div>
-            <div><b>🔐 IP:</b> ${c.ip || 'Hidden'}</div>
-          </div>
-        </div>
-      `).join('');
-    }
+    
+    if (!clicks) td.innerHTML = "<div class='detail-box'><em>No click data.</em></div>";
+    else td.innerHTML = Object.values(clicks).map(c => `
+      <div class="detail-box">
+        <div><b>Time:</b> ${new Date(c.timestamp).toLocaleString()}</div>
+        <div><b>Loc:</b> ${c.city || '?'}, ${c.country || 'N/A'}</div>
+      </div>
+    `).join('');
+    
     detailRow.appendChild(td);
     row.parentNode.insertBefore(detailRow, row.nextSibling);
   });
@@ -277,37 +246,31 @@ function searchLinks() {
   const query = document.getElementById("searchInput").value.toLowerCase();
   const tbody = document.querySelector("#urlTable tbody");
   tbody.innerHTML = "";
-
-  const filtered = allLinks.filter(([alias, info]) =>
-    alias.toLowerCase().includes(query) || info.url.toLowerCase().includes(query)
-  );
-
+  const filtered = allLinks.filter(([alias, info]) => alias.toLowerCase().includes(query) || info.url.toLowerCase().includes(query));
   filtered.slice(0, pageSize).forEach(([alias, info]) => {
      const tr = document.createElement("tr");
      tr.innerHTML = `
         <td><strong>${alias}</strong></td>
-        <td><a href="${info.url}" target="_blank">${info.url.substring(0, 50)}...</a></td>
+        <td><a href="${info.url}" target="_blank">${info.url.substring(0, 30)}...</a></td>
         <td>-</td>
-        <td>
-          <div class="action-group">
-             <button onclick="deleteLink('${alias}')" class="button btn-sm btn-danger">🗑️</button>
-          </div>
-        </td>
+        <td><div class="action-group"><button onclick="deleteLink('${alias}')" class="button btn-sm btn-danger">🗑️</button></div></td>
       `;
       tbody.appendChild(tr);
   });
 }
 
 function banUser(email) {
-  if (!email) return alert("❌ This link is anonymous (no email).");
+  if (!email) return showToast("No email associated", "error");
   if(confirm(`Ban user ${email}?`)) {
       db.ref("bannedEmails/" + btoa(email)).set(true);
+      showToast("User banned", "success");
       loadBannedUsers();
   }
 }
 
 function unbanUser(encodedEmail) {
   db.ref("bannedEmails/" + encodedEmail).remove();
+  showToast("User unbanned", "success");
   loadBannedUsers();
 }
 
@@ -316,9 +279,8 @@ function loadBannedUsers() {
     const list = document.getElementById("bannedList");
     list.innerHTML = "";
     Object.keys(snap.val() || {}).forEach(encodedEmail => {
-      const email = atob(encodedEmail);
       const li = document.createElement("li");
-      li.innerHTML = `<span>${email}</span> <button onclick="unbanUser('${encodedEmail}')" class="button btn-sm">Unban</button>`;
+      li.innerHTML = `<span>${atob(encodedEmail)}</span> <button onclick="unbanUser('${encodedEmail}')" class="button btn-sm">Unban</button>`;
       list.appendChild(li);
     });
   });
