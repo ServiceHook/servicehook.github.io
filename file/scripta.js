@@ -297,6 +297,7 @@ function loadBannedUsers() {
 }
 
 // --- BILLING SYSTEM ---
+// --- BILLING SYSTEM ---
 function loadBilling() {
   const tbody = document.querySelector("#billingTable tbody");
   tbody.innerHTML = "<tr><td colspan='5'>Loading requests...</td></tr>";
@@ -312,11 +313,14 @@ function loadBilling() {
       const id = child.key;
       const req = child.val();
       
+      // 🛡️ SAFEGUARD: Handle missing User ID
+      const displayUid = req.userId ? req.userId.substring(0,6) : "Unknown";
+      
       const tr = document.createElement("tr");
       tr.innerHTML = `
         <td>
-            <div style="font-weight:bold;">${req.userEmail}</div>
-            <div style="font-size:0.8rem; color:#94a3b8;">UID: ${req.userId.substring(0,6)}...</div>
+            <div style="font-weight:bold;">${req.userEmail || "No Email"}</div>
+            <div style="font-size:0.8rem; color:#94a3b8;">UID: ${displayUid}...</div>
         </td>
         <td>
             <div style="color:#6366f1;">${req.planName}</div>
