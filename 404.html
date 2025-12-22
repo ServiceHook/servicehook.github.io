@@ -82,7 +82,7 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
     
-    // Get the alias from the URL (e.g. jachu.xyz/mylink -> mylink)
+    // Get the alias from the URL
     const alias = window.location.pathname.replace("/", "").trim();
 
     // UI Elements
@@ -105,7 +105,7 @@
     }
 
     // Main Logic
-    if (!alias || alias === "404.html") {
+    if (!alias || alias === "404.html" || alias === "404") {
       showError("Page not found.");
     } else {
       db.ref("links/" + alias).once("value").then(snapshot => {
@@ -151,7 +151,6 @@
     }
 
     function performRedirect(url) {
-      // Analytics can go here
       window.location.replace(url);
     }
   </script>

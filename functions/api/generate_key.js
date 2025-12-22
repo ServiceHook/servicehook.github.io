@@ -6,7 +6,7 @@ export async function onRequestPost(context) {
     const idToken = body.token;
     const shouldRegenerate = body.regenerate === true;
 
-    if (!idToken) return new Response("Missing Token", { status: 401 });
+    if (!idToken) return new Response(JSON.stringify({ error: "Missing Token" }), { status: 401 });
 
     // 1. VERIFY USER
     const verifyUrl = `https://identitytoolkit.googleapis.com/v1/accounts:lookup?key=${env.FIREBASE_WEB_API_KEY}`;
@@ -18,7 +18,7 @@ export async function onRequestPost(context) {
 
     const googleData = await googleRes.json();
     if (!googleData.users || googleData.users.length === 0) {
-      return new Response("Invalid Token", { status: 403 });
+      return new Response(JSON.stringify({ error: "Invalid Token" }), { status: 403 });
     }
 
     const uid = googleData.users[0].localId;
@@ -33,7 +33,7 @@ export async function onRequestPost(context) {
 
     // 3. HANDLE PRESERVATION OR CREATION
     if (currentKey) {
-      // Get data of OLD key to preserve limit (e.g. 969)
+      // Get data of OLD key to preserve limit
       const keyStatsUrl = `${env.FIREBASE_DB_URL}/api_keys/${currentKey}.json?auth=${env.FIREBASE_DB_SECRET}`;
       const statsRes = await fetch(keyStatsUrl);
       const existingData = await statsRes.json();

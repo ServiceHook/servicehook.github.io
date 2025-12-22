@@ -15,11 +15,9 @@
         }
         .full-width { grid-column: 1 / -1; }
         
-        /* Headers */
         h2 { font-size: 1.5rem; margin-top: 0; color: white; display: flex; align-items: center; gap: 10px; }
         .badge { font-size: 0.75rem; background: rgba(99, 102, 241, 0.2); color: #818cf8; padding: 4px 8px; border-radius: 6px; border: 1px solid rgba(99, 102, 241, 0.3); }
 
-        /* API Key Area */
         .key-wrapper {
             position: relative; background: rgba(0,0,0,0.3); border-radius: 12px;
             border: 1px solid var(--border-color); padding: 15px; margin-top: 15px;
@@ -32,12 +30,10 @@
         }
         .api-key-text.revealed { filter: blur(0); user-select: all; }
 
-        /* Buttons */
         .btn-group { display: flex; gap: 10px; margin-top: 15px; }
         .btn-outline { background: transparent; border: 1px solid var(--border-color); color: var(--text-muted); }
         .btn-outline:hover { border-color: var(--primary-accent); color: white; }
 
-        /* Code Block */
         .code-window { background: #0f172a; border-radius: 12px; border: 1px solid var(--border-color); overflow: hidden; margin-top: 15px; }
         .code-header { background: rgba(255,255,255,0.05); padding: 10px 15px; display: flex; gap: 15px; border-bottom: 1px solid var(--border-color); }
         .tab { font-size: 0.85rem; color: var(--text-muted); cursor: pointer; padding-bottom: 2px; }
@@ -45,7 +41,6 @@
         pre { margin: 0; padding: 20px; overflow-x: auto; color: #e2e8f0; font-size: 0.9rem; }
         .token.method { color: #f472b6; } .token.url { color: #4ade80; } .token.header { color: #60a5fa; } .token.comment { color: #64748b; }
 
-        /* Pricing & Tables */
         .pricing-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-top: 20px; }
         .plan-card { background: rgba(255,255,255,0.03); border: 1px solid var(--border-color); padding: 20px; border-radius: 16px; text-align: center; cursor: pointer; transition: 0.2s; }
         .plan-card:hover, .plan-card.selected { background: rgba(99, 102, 241, 0.1); border-color: var(--primary-accent); transform: translateY(-3px); }
@@ -239,7 +234,7 @@ print(response.json())</code></pre>
             }
         });
 
-        // 1. KEY LOGIC (SYNC & REGENERATE)
+        // 1. KEY LOGIC
         async function generateKey(forceNew) {
             const btn = document.getElementById('genBtn');
             const keyDisplay = document.getElementById('apiKeyDisplay');
@@ -247,7 +242,6 @@ print(response.json())</code></pre>
 
             try {
                 const token = await currentUser.getIdToken();
-                // Send 'regenerate: true' if forceNew is true
                 const response = await fetch('/api/generate_key', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -260,7 +254,7 @@ print(response.json())</code></pre>
                     keyDisplay.innerText = currentKey; 
                     updateUsageUI(data.usage, data.limit);
                 } else {
-                    alert("Error: " + data.error);
+                    alert("Error: " + (data.error || data.message || "Unknown error"));
                 }
             } catch (e) { console.error(e); }
             if(btn) btn.disabled = false;
@@ -326,7 +320,7 @@ print(response.json())</code></pre>
             });
         }
 
-        // 3. API LINKS TABLE (FILTERED)
+        // 3. API LINKS TABLE
         function fetchApiLinks(uid) {
             db.ref("links").orderByChild("userId").equalTo(uid).once("value").then(snap => {
                 const tbody = document.querySelector("#apiLinkTable tbody");
@@ -336,9 +330,8 @@ print(response.json())</code></pre>
                 const rows = [];
                 snap.forEach(c => {
                     const d = c.val();
-                    // FILTER: Only show source = 'api'
                     if (d.source === 'api') {
-                        rows.unshift({ key: c.key, ...d }); // Newest first
+                        rows.unshift({ key: c.key, ...d });
                     }
                 });
 
@@ -363,7 +356,6 @@ print(response.json())</code></pre>
             }
         }
 
-        // UI Utilities
         function toggleReveal() { document.getElementById('apiKeyDisplay').classList.toggle('revealed'); }
         function copyKey() { navigator.clipboard.writeText(currentKey); alert("Key Copied"); }
         function showTab(id) {
@@ -373,8 +365,7 @@ print(response.json())</code></pre>
         }
     </script>
 
-   <script src='https://cdn.jotfor.ms/agent/embedjs/0197fa7374c97c9fade854e7f577b1bedcde/embed.js'>
+    <script src='https://cdn.jotfor.ms/agent/embedjs/0197fa7374c97c9fade854e7f577b1bedcde/embed.js'>
 </script>
-    
 </body>
 </html>

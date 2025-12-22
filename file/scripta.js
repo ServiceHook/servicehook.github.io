@@ -11,6 +11,10 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
+// --- CONFIGURATION ---
+// IMPORTANT: Change this email to your personal Google Account email
+const ADMIN_EMAIL = "ztenkammu@gmail.com"; 
+
 // --- TOAST SYSTEM ---
 function showToast(message, type = 'neutral') {
   let container = document.querySelector('.toast-container');
@@ -41,7 +45,7 @@ function login() {
 
   firebase.auth().signInWithEmailAndPassword(email, password)
     .then(userCred => {
-      if (userCred.user.email !== "ztenkammu@gmail.com") {
+      if (userCred.user.email !== ADMIN_EMAIL) {
         showToast("Access Denied: Not an Admin", "error");
         firebase.auth().signOut();
       } else {
@@ -59,7 +63,7 @@ function login() {
 }
 
 firebase.auth().onAuthStateChanged(user => {
-  if (user && user.email === "ztenkammu@gmail.com") {
+  if (user && user.email === ADMIN_EMAIL) {
     initAdminPanel();
   } else {
     document.getElementById("loginSection").style.display = "flex";
@@ -126,6 +130,7 @@ function loadDashboard() {
       list.appendChild(li);
     });
 
+    // 3. Render Chart
     if(window.Chart) renderGrowthChart(values);
   });
 }
@@ -291,7 +296,7 @@ function loadBannedUsers() {
   });
 }
 
-// --- BILLING SYSTEM (FIXED STACKING) ---
+// --- BILLING SYSTEM ---
 function loadBilling() {
   const tbody = document.querySelector("#billingTable tbody");
   tbody.innerHTML = "<tr><td colspan='5'>Loading requests...</td></tr>";
@@ -332,7 +337,6 @@ function loadBilling() {
 }
 
 function approvePlan(reqId, userId, packLimit) {
-  // packLimit is the NEW amount to add (e.g., 219)
   if(!confirm(`Confirm payment? This will ADD ${packLimit} links to the user's existing limit.`)) return;
 
   // 1. Find the User's API Key
@@ -340,7 +344,7 @@ function approvePlan(reqId, userId, packLimit) {
     const apiKey = snap.val();
     
     if (!apiKey) {
-      alert("Error: User has not generated an API key yet. Ask them to visit the dashboard once.");
+      alert("Error: User has not generated an API key yet.");
       return;
     }
 
@@ -349,14 +353,12 @@ function approvePlan(reqId, userId, packLimit) {
     
     keyRef.once("value").then(keySnap => {
       const data = keySnap.val() || {};
-      const currentLimit = parseInt(data.limit) || 0; // e.g., 50
-      const amountToAdd = parseInt(packLimit) || 0;   // e.g., 219
-      
-      const newTotal = currentLimit + amountToAdd;    // e.g., 269
+      const currentLimit = parseInt(data.limit) || 0;
+      const amountToAdd = parseInt(packLimit) || 0;
+      const newTotal = currentLimit + amountToAdd;
 
       // 3. Update with New Total
       keyRef.update({ limit: newTotal }).then(() => {
-        // 4. Remove Request
         db.ref(`payment_requests/${reqId}`).remove();
         showToast(`Success! Limit upgraded: ${currentLimit} ➝ ${newTotal}`, "success");
         loadBilling();
@@ -372,7 +374,6 @@ function rejectPlan(reqId) {
   }
 }
 
-// Check for pending bills
 function checkPendingBills() {
     db.ref("payment_requests").on("value", snap => {
         const badge = document.getElementById("billBadge");

@@ -32,16 +32,18 @@ export async function onRequest(context) {
 
       // 🛑 SECURITY: Prevent self-shortening (Loops)
       const blockedDomains = ["jachu.xyz", "servicehook.github.io"];
-      if (blockedDomains.some(domain => body.url.includes(domain))) {
-         throw new Error("Cannot shorten links from this domain.");
+      try {
+        const targetUrlObj = new URL(body.url);
+        if (blockedDomains.some(domain => targetUrlObj.hostname.includes(domain))) {
+           throw new Error("Cannot shorten links from this domain.");
+        }
+      } catch (e) {
+        throw new Error("Invalid URL format provided.");
       }
 
       // 3. Generate Slug (Custom or Random)
       let slug = body.slug ? body.slug.trim() : Math.random().toString(36).substring(2, 8);
       
-      // If custom slug, check if exists (Optional check to prevent overwrite)
-      // For speed, we are skipping the 'check if exists' read, but in production, you might want it.
-
       // 4. Save to Database
       const saveUrl = `${env.FIREBASE_DB_URL}/links/${slug}.json?auth=${env.FIREBASE_DB_SECRET}`;
       
@@ -55,15 +57,18 @@ export async function onRequest(context) {
         })
       });
 
-      // 5. Increment Usage
+      // 5. Increment Usage (Optimistic)
       await fetch(`${env.FIREBASE_DB_URL}/api_keys/${apiKey}/usage.json?auth=${env.FIREBASE_DB_SECRET}`, {
         method: 'PUT',
         body: (keyData.usage || 0) + 1
       });
 
+      // Determine Base URL (Dynamic)
+      const baseUrl = new URL(request.url).origin;
+
       return new Response(JSON.stringify({
         status: "success",
-        short_url: `https://jachu.xyz/${slug}`,
+        short_url: `${baseUrl}/${slug}`,
         usage: (keyData.usage || 0) + 1,
         limit: keyData.limit
       }), {
