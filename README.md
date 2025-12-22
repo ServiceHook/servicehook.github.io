@@ -25,7 +25,8 @@ Jachu is a cloud-native URL shortening service built for speed and reliability. 
 You can use the Jachu API to programmatically shorten links from your own website, app, or browser extension.
 
 ### 1. Base URL
-POST https://jachu.xyz/api/create
+POST `https://jachu.xyz/api/create`
+
 ### 2. Authentication
 An API Key is required. You can generate one for free by visiting the [Developer Dashboard](https://jachu.xyz/api/dashboard.html).
 
@@ -44,11 +45,10 @@ An API Key is required. You can generate one for free by visiting the [Developer
   "url": "[https://www.google.com/search?q=javascript](https://www.google.com/search?q=javascript)",
   "slug": "googlesearch"
 }
+
 4. Response (JSON)
 Success (200 OK):
-```
-4. Response (JSON)
-Success (200 OK):
+
 {
   "status": "success",
   "short_url": "[https://jachu.xyz/googlesearch](https://jachu.xyz/googlesearch)",
@@ -93,12 +93,14 @@ async function shortenLink(longUrl, apiKey) {
 🔒 Copyright & License
 © 2025 Jachu.xyz. All Rights Reserved.
 
-This source code is Proprietary.
+This source code is Proprietary. You MAY use the API endpoint in your own applications. You MAY NOT copy, clone, host, or redistribute this codebase to run a competing service.
 
-You MAY use the API endpoint in your own applications.
+### 16. `.gitignore`
 
-You MAY NOT copy, clone, host, or redistribute this codebase to run a competing service.
-
-The code is published here solely for transparency and documentation.
-
-Contact: For enterprise limits or questions, please contact the repository owner.
+```text
+.wrangler
+node_modules
+package-lock.json
+package.json
+.dev.vars
+.DS_Store

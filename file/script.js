@@ -14,7 +14,7 @@ const auth = firebase.auth();
 
 let currentUser = null;
 
-// --- TOAST SYSTEM (Replaces Alerts) ---
+// --- TOAST SYSTEM ---
 function showToast(message, type = 'neutral') {
   let container = document.querySelector('.toast-container');
   if (!container) {
@@ -24,7 +24,6 @@ function showToast(message, type = 'neutral') {
   }
 
   const icons = { success: '✅', error: '❌', neutral: 'ℹ️' };
-
   const toast = document.createElement('div');
   toast.className = `toast ${type}`;
   toast.innerHTML = `
@@ -46,12 +45,10 @@ auth.onAuthStateChanged(user => {
   currentUser = user;
   const userDisplay = document.getElementById("userIdDisplay");
   
-  // --- NEW: References to Mobile Sidebar Buttons ---
   const mobileLogin = document.getElementById("mobileLoginBtn");
   const mobileSignout = document.getElementById("mobileSignoutBtn");
   
   if (user) {
-    // 1. HEADER (Desktop)
     if(userDisplay) userDisplay.innerHTML = `👋 Hi, ${user.email.split('@')[0]}`;
     const loginBtn = document.querySelector('button[onclick="toggleAuthModal()"]');
     const signoutBtn = document.querySelector('button[onclick="signOut()"]');
@@ -59,17 +56,14 @@ auth.onAuthStateChanged(user => {
     if(loginBtn) loginBtn.style.display = "none";
     if(signoutBtn) signoutBtn.style.display = "inline-block";
     
-    // 2. SIDEBAR (Mobile) - Show Sign Out, Hide Login
     if(mobileLogin) mobileLogin.style.display = "none";
     if(mobileSignout) mobileSignout.style.display = "block";
 
-    // 3. DATA
     const emailEl = document.getElementById("userEmail");
     if(emailEl) emailEl.textContent = user.email;
     fetchUserLinks(user.uid);
 
   } else {
-    // 1. HEADER (Desktop)
     if(userDisplay) userDisplay.innerHTML = "";
     const loginBtn = document.querySelector('button[onclick="toggleAuthModal()"]');
     const signoutBtn = document.querySelector('button[onclick="signOut()"]');
@@ -77,11 +71,9 @@ auth.onAuthStateChanged(user => {
     if(loginBtn) loginBtn.style.display = "inline-block";
     if(signoutBtn) signoutBtn.style.display = "none";
     
-    // 2. SIDEBAR (Mobile) - Show Login, Hide Sign Out
     if(mobileLogin) mobileLogin.style.display = "block";
     if(mobileSignout) mobileSignout.style.display = "none";
     
-    // 3. DATA
     const linksList = document.getElementById("userLinksList");
     if(linksList) linksList.innerHTML = "";
     const emailEl = document.getElementById("userEmail");
@@ -105,6 +97,8 @@ function signUp() {
   btn.innerText = "Creating...";
   auth.createUserWithEmailAndPassword(email, password)
     .then(() => { 
+      // Account created, standard Firebase flow handles login,
+      // but we let onAuthStateChanged handle the UI updates.
       toggleAuthModal(); 
       btn.innerText = "Create Account"; 
       showToast("Account created successfully!", "success");
@@ -123,11 +117,27 @@ function signIn() {
   if(!email || !password) return showToast("Please enter email and password", "error");
 
   btn.innerText = "Logging in...";
+  
   auth.signInWithEmailAndPassword(email, password)
-    .then(() => { 
-      toggleAuthModal(); 
-      btn.innerText = "Log In"; 
-      showToast("Welcome back!", "success");
+    .then((userCred) => {
+      // 🛑 BAN CHECK START
+      const userEmail = userCred.user.email;
+      const encodedEmail = btoa(userEmail);
+      
+      db.ref("bannedEmails/" + encodedEmail).once("value").then(snap => {
+        if (snap.exists()) {
+          // USER IS BANNED
+          auth.signOut(); // Kick them out immediately
+          showToast("Your mail was banned please contact us for apeal", "error");
+          btn.innerText = "Log In";
+        } else {
+          // USER IS OK
+          toggleAuthModal(); 
+          btn.innerText = "Log In"; 
+          showToast("Welcome back!", "success");
+        }
+      });
+      // 🛑 BAN CHECK END
     })
     .catch(err => { 
       showToast(cleanError(err.message), "error"); 
@@ -142,13 +152,11 @@ function signOut() {
   });
 }
 
-// --- FIXED FORGOT PASSWORD LOGIC ---
 function resetPassword() {
   const emailField = document.getElementById("email");
   const email = emailField.value.trim();
   const btn = document.getElementById("resetBtn");
   
-  // If email is empty, visually guide user to the email box
   if (!email) {
     showToast("Please type your email in the box above first!", "error");
     emailField.focus();
@@ -177,9 +185,6 @@ function cleanError(msg) {
 }
 
 // --- SHORTENER LOGIC ---
-// ... [Keep Firebase Config & Auth Logic exactly as before] ...
-
-// --- SHORTENER LOGIC (FIXED) ---
 function showLoader(show) {
   const loader = document.getElementById("loader");
   if(loader) loader.style.display = show ? "flex" : "none";
@@ -200,7 +205,8 @@ function getExpiryTimestamp(option, customDate) {
   return null;
 }
 
-function shorten() {
+// UPDATED TO ASYNC FOR IP CHECK
+async function shorten() {
   const longUrl = document.getElementById("longUrl").value.trim();
   let alias = document.getElementById("customAlias").value.trim();
   const password = document.getElementById("linkPassword").value.trim();
@@ -213,11 +219,34 @@ function shorten() {
   
   if (!longUrl) return showToast("Please paste a URL to shorten", "error");
   
+  // 🛑 ANONYMOUS IP BAN CHECK
+  if (!currentUser) {
+    try {
+      showLoader(true);
+      // Fetch IP from public API
+      const ipRes = await fetch('https://api.ipify.org?format=json');
+      const ipData = await ipRes.json();
+      const userIp = ipData.ip;
+      
+      // Check database for banned IP (stored as base64 to avoid dots)
+      const bannedSnap = await db.ref("bannedIps/" + btoa(userIp)).get();
+      
+      if (bannedSnap.exists()) {
+        showLoader(false);
+        showToast("Your IP was banned please contact us for apeal", "error");
+        return; // Stop execution
+      }
+    } catch (e) {
+      console.warn("IP Check failed, allowing:", e);
+      // We allow them to proceed if IP check fails to avoid blocking users due to API errors
+    }
+  }
+
   let formattedUrl = longUrl.startsWith("http") ? longUrl : "https://" + longUrl;
 
   if (!alias) alias = Math.random().toString(36).substring(2, 8);
 
-  showLoader(true); // START LOADING
+  showLoader(true); // Ensure loader is on
   
   const ref = db.ref("links/" + alias);
 
@@ -278,8 +307,6 @@ function copyToClipboard(text) {
     showToast("Copied to clipboard!", "success");
   });
 }
-
-// ... [Include the rest of the file: Auth Logic, Sidebar Logic, etc. from previous turn] ...
 
 // --- SIDEBAR LOGIC ---
 let linksListener = null;

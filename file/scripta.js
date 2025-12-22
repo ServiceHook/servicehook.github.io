@@ -91,7 +91,7 @@ function switchSection(id) {
   if(activeNav) activeNav.classList.add('active');
 
   if(id === 'manage') loadLinks();
-  if(id === 'ban') loadBannedUsers();
+  if(id === 'ban') { loadBannedUsers(); loadBannedIps(); }
   if(id === 'billing') loadBilling();
 }
 
@@ -130,13 +130,27 @@ function loadDashboard() {
       list.appendChild(li);
     });
 
-    // 3. Render Chart
-    if(window.Chart) renderGrowthChart(values);
+    // 3. Render Chart (With Retry)
+    // Sometimes JS loads slower than DB. We try 3 times.
+    const attemptRender = (retryCount = 0) => {
+        if(typeof Chart !== "undefined") {
+            renderGrowthChart(values);
+        } else if (retryCount < 3) {
+            console.warn("Chart.js loading... retry " + (retryCount+1));
+            setTimeout(() => attemptRender(retryCount + 1), 1000);
+        } else {
+            console.error("Chart.js failed to load.");
+        }
+    };
+    attemptRender();
   });
 }
 
 function renderGrowthChart(links) {
-  const ctx = document.getElementById('growthChart').getContext('2d');
+  const canvas = document.getElementById('growthChart');
+  if(!canvas) return;
+  const ctx = canvas.getContext('2d');
+  
   const labels = [];
   const dataPoints = [];
   for (let i = 6; i >= 0; i--) {
@@ -269,34 +283,83 @@ function searchLinks() {
   });
 }
 
+// --- BAN SYSTEM (EMAILS) ---
 function banUser(email) {
   if (!email) return showToast("No email associated", "error");
   if(confirm(`Ban user ${email}?`)) {
-      db.ref("bannedEmails/" + btoa(email)).set(true);
-      showToast("User banned", "success");
-      loadBannedUsers();
+      db.ref("bannedEmails/" + btoa(email)).set(true)
+        .then(() => {
+          showToast("User banned", "success");
+          loadBannedUsers();
+        })
+        .catch(err => showToast(err.message, "error"));
   }
 }
 
 function unbanUser(encodedEmail) {
-  db.ref("bannedEmails/" + encodedEmail).remove();
-  showToast("User unbanned", "success");
-  loadBannedUsers();
+  db.ref("bannedEmails/" + encodedEmail).remove()
+    .then(() => {
+      showToast("User unbanned", "success");
+      loadBannedUsers();
+    });
 }
 
 function loadBannedUsers() {
   db.ref("bannedEmails").once("value").then(snap => {
     const list = document.getElementById("bannedList");
     list.innerHTML = "";
+    if(!snap.exists()) {
+       list.innerHTML = "<li>No banned users.</li>";
+       return;
+    }
     Object.keys(snap.val() || {}).forEach(encodedEmail => {
       const li = document.createElement("li");
-      li.innerHTML = `<span>${atob(encodedEmail)}</span> <button onclick="unbanUser('${encodedEmail}')" class="button btn-sm">Unban</button>`;
+      li.style.marginBottom = "8px";
+      li.innerHTML = `<span>${atob(encodedEmail)}</span> <button onclick="unbanUser('${encodedEmail}')" class="button btn-sm btn-danger" style="margin-left:10px;">Unban</button>`;
       list.appendChild(li);
     });
   });
 }
 
-// --- BILLING SYSTEM ---
+// --- BAN SYSTEM (IPs) ---
+function manualBanIp() {
+  const ip = document.getElementById('ipInput').value.trim();
+  if(!ip) return showToast("Please enter an IP", "error");
+  
+  db.ref("bannedIps/" + btoa(ip)).set(true)
+    .then(() => {
+      showToast("IP Banned", "success");
+      document.getElementById('ipInput').value = "";
+      loadBannedIps();
+    })
+    .catch(err => showToast(err.message, "error"));
+}
+
+function unbanIp(encodedIp) {
+  db.ref("bannedIps/" + encodedIp).remove()
+    .then(() => {
+      showToast("IP Unbanned", "success");
+      loadBannedIps();
+    });
+}
+
+function loadBannedIps() {
+  db.ref("bannedIps").once("value").then(snap => {
+    const list = document.getElementById("bannedIpList");
+    list.innerHTML = "";
+    if(!snap.exists()) {
+       list.innerHTML = "<li>No banned IPs.</li>";
+       return;
+    }
+    Object.keys(snap.val() || {}).forEach(encodedIp => {
+      const li = document.createElement("li");
+      li.style.marginBottom = "8px";
+      li.innerHTML = `<span>${atob(encodedIp)}</span> <button onclick="unbanIp('${encodedIp}')" class="button btn-sm btn-danger" style="margin-left:10px;">Unban</button>`;
+      list.appendChild(li);
+    });
+  });
+}
+
 // --- BILLING SYSTEM ---
 function loadBilling() {
   const tbody = document.querySelector("#billingTable tbody");
@@ -312,10 +375,8 @@ function loadBilling() {
     snap.forEach(child => {
       const id = child.key;
       const req = child.val();
-      
-      // 🛡️ SAFEGUARD: Handle missing User ID
       const displayUid = req.userId ? req.userId.substring(0,6) : "Unknown";
-      
+
       const tr = document.createElement("tr");
       tr.innerHTML = `
         <td>
@@ -343,7 +404,6 @@ function loadBilling() {
 function approvePlan(reqId, userId, packLimit) {
   if(!confirm(`Confirm payment? This will ADD ${packLimit} links to the user's existing limit.`)) return;
 
-  // 1. Find the User's API Key
   db.ref(`users/${userId}/api_key`).once("value").then(snap => {
     const apiKey = snap.val();
     
@@ -352,7 +412,6 @@ function approvePlan(reqId, userId, packLimit) {
       return;
     }
 
-    // 2. FETCH CURRENT LIMIT & STACK
     const keyRef = db.ref(`api_keys/${apiKey}`);
     
     keyRef.once("value").then(keySnap => {
@@ -361,7 +420,6 @@ function approvePlan(reqId, userId, packLimit) {
       const amountToAdd = parseInt(packLimit) || 0;
       const newTotal = currentLimit + amountToAdd;
 
-      // 3. Update with New Total
       keyRef.update({ limit: newTotal }).then(() => {
         db.ref(`payment_requests/${reqId}`).remove();
         showToast(`Success! Limit upgraded: ${currentLimit} ➝ ${newTotal}`, "success");

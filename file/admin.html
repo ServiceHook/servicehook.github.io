@@ -12,7 +12,8 @@
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js/dist/chart.umd.min.js"></script>
 </head>
 <body>
 
@@ -55,9 +56,9 @@
           </div>
         </div>
 
-        <div class="stat-card" style="margin-bottom: 30px; border: 1px solid var(--border-color);">
+        <div class="stat-card" style="margin-bottom: 30px; border: 1px solid var(--border-color); padding: 20px;">
           <h3 style="margin-bottom: 15px;">📈 Growth (Last 7 Days)</h3>
-          <div style="height: 300px;">
+          <div style="position: relative; height: 300px; width: 100%;">
             <canvas id="growthChart"></canvas>
           </div>
         </div>
@@ -114,8 +115,25 @@
 
       <div id="ban" class="section hidden">
         <h2>🚫 Restricted Users</h2>
-        <p style="color: var(--text-muted); margin-bottom: 20px;">Users in this list cannot log in or create links.</p>
-        <ul id="bannedList" style="list-style: none; padding: 0;"></ul>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+          
+          <div class="shortener-box" style="background: rgba(255,255,255,0.03); padding: 20px; border-radius: 12px;">
+             <h3>📧 Banned Emails</h3>
+             <p style="color: var(--text-muted); font-size: 0.9rem;">These users cannot login.</p>
+             <ul id="bannedList" style="list-style: none; padding: 0; margin-top: 15px;"></ul>
+          </div>
+
+          <div class="shortener-box" style="background: rgba(255,255,255,0.03); padding: 20px; border-radius: 12px;">
+             <h3>💻 Banned IPs</h3>
+             <p style="color: var(--text-muted); font-size: 0.9rem;">These IPs cannot create links (Guest).</p>
+             <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+               <input type="text" id="ipInput" placeholder="Enter IP (e.g. 192.168.1.1)" class="input" style="margin:0; padding: 8px;">
+               <button onclick="manualBanIp()" class="button" style="width: auto;">Ban</button>
+             </div>
+             <ul id="bannedIpList" style="list-style: none; padding: 0;"></ul>
+          </div>
+
+        </div>
       </div>
 
     </div>

@@ -175,6 +175,5 @@ tr:hover td { background: rgba(255,255,255,0.02); }
   
   .login-card { padding: 30px 20px; }
   
-  /* Stack stats on small screens */
   .stats-grid { grid-template-columns: 1fr; }
 }
