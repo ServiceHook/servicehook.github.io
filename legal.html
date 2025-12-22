@@ -36,6 +36,7 @@
     p { line-height: 1.7; color: var(--text-muted); margin-bottom: 15px; }
     ul { color: var(--text-muted); line-height: 1.7; padding-left: 20px; }
     li { margin-bottom: 8px; }
+    strong { color: #f8fafc; }
   </style>
 </head>
 <body>
@@ -49,16 +50,17 @@
     <p style="text-align: center; color: var(--text-muted); margin-bottom: 40px;">Transparency is our core value.</p>
 
     <div class="legal-nav">
-      <a href="#about">About Us</a>
-      <a href="#terms">Terms of Service</a>
-      <a href="#privacy">Privacy Policy</a>
-      <a href="#refund">Refund Policy</a>
+      <a href="#about">About</a>
+      <a href="#terms">Terms</a>
+      <a href="#aup">Acceptable Use</a>
+      <a href="#privacy">Privacy</a>
+      <a href="#refund">Refunds</a>
       <a href="#contact">Contact</a>
     </div>
 
     <div id="about" class="section-card">
       <h2>🚀 About Jachu</h2>
-      <p>Jachu is a next-generation URL shortening infrastructure designed for developers, marketers, and creators. Built on the Cloudflare Edge Network, we ensure your links are fast, secure, and always online.</p>
+      <p>Jachu is a professional URL shortening infrastructure designed for developers, marketers, and creators. Built on the <strong>Cloudflare Edge Network</strong>, we ensure your links are fast, secure, and always online.</p>
       <p>We are dedicated to providing a clutter-free, privacy-focused experience without intrusive tracking or ads.</p>
     </div>
 
@@ -66,43 +68,70 @@
       <h2>⚖️ Terms of Service</h2>
       <p><strong>Effective Date:</strong> July 24, 2025</p>
       
-      <h3>1. Acceptance of Terms</h3>
-      <p>By accessing and using Jachu, you accept and agree to be bound by the terms and provision of this agreement.</p>
-      
-      <h3>2. Prohibited Use</h3>
-      <p>You agree not to use the service for:</p>
+      <h3>1. API Usage & Limits</h3>
+      <p>Jachu provides an Application Programming Interface ("API") for developer integration. By using our API, you agree to the following:</p>
       <ul>
-        <li>Spamming or unsolicited bulk messaging.</li>
-        <li>Illegal activities, phishing, or malware distribution.</li>
-        <li>Content that promotes hate speech, violence, or discrimination.</li>
+        <li><strong>Rate Limiting:</strong> Usage is strictly limited to the quota assigned to your API Key (Free Tier: 50 requests/month; Paid Tiers: as purchased).</li>
+        <li><strong>Security:</strong> You are responsible for keeping your API Key secure. Jachu is not liable for usage incurred by compromised keys.</li>
+        <li><strong>Abuse:</strong> Creating multiple accounts to bypass rate limits will result in an immediate permanent ban.</li>
       </ul>
-      <p>We reserve the right to disable any link and ban any user found violating these terms without notice.</p>
+
+      <h3>2. Account Termination</h3>
+      <p>We reserve the right to suspend or terminate your access to Jachu at any time, without notice, for conduct that we believe violates these Terms or is harmful to other users of our service.</p>
+      
+      <h3>3. Service Availability</h3>
+      <p>While we utilize high-availability infrastructure (Cloudflare & Firebase), we do not guarantee 100% uptime. We also utilize third-party services (ApiFlash, QRServer) for specific features and are not responsible for their availability.</p>
+    </div>
+
+    <div id="aup" class="section-card">
+      <h2>🚨 Acceptable Use Policy</h2>
+      <p>To protect our users and reputation, we maintain a <strong>Zero Tolerance Policy</strong> against abuse. You may NOT use Jachu to shorten links to:</p>
+      <ul>
+        <li>Malware, ransomware, spyware, or browser lockers.</li>
+        <li>Phishing websites (fake login pages, banking scams).</li>
+        <li>Illegal content (piracy, CSAM, illicit drugs, violence).</li>
+        <li>Spam or unsolicited bulk messaging (SMS/Email).</li>
+      </ul>
+      <p><strong>Enforcement:</strong> Any link found violating this policy will be disabled immediately. We cooperate fully with law enforcement requests regarding illegal activities.</p>
     </div>
 
     <div id="privacy" class="section-card">
       <h2>🔒 Privacy Policy</h2>
-      <p>Your privacy is paramount. Here is exactly what we track:</p>
+      <p>Your privacy is paramount. Here is exactly what we track and why:</p>
       
-      <h3>Information We Collect</h3>
+      <h3>1. Information We Collect</h3>
       <ul>
-        <li><strong>Link Data:</strong> The original URL and the short alias you create.</li>
-        <li><strong>Analytics:</strong> Anonymous click data (Country, City, Device Type) to provide you with stats.</li>
-        <li><strong>Account Info:</strong> Your email address (if you sign up) to manage your links.</li>
+        <li><strong>Personal Info:</strong> Your email address and unique User ID (UID) are stored when you sign up to manage your links.</li>
+        <li><strong>Link Data:</strong> The original URLs, custom aliases, and optional passwords you create.</li>
+        <li><strong>Analytics:</strong> We track anonymous click data (Country, City, Device Type) to provide statistics.</li>
       </ul>
       
-      <h3>Data Sharing</h3>
-      <p>We do <strong>not</strong> sell your personal data to third parties. We use industry-standard encryption for all data transmission.</p>
+      <h3>2. Third-Party Processors</h3>
+      <p>We trust the following providers to power our infrastructure:</p>
+      <ul>
+        <li><strong>Google Firebase (USA):</strong> Hosting, Database, and Authentication.</li>
+        <li><strong>Cloudflare (USA):</strong> Edge network execution and security.</li>
+        <li><strong>ApiFlash & QRServer:</strong> Used solely for generating link previews and QR codes.</li>
+      </ul>
     </div>
 
     <div id="refund" class="section-card">
       <h2>💸 Refund & Cancellation</h2>
-      <p><strong>Digital Services:</strong> Since our premium features (if applicable) are digital and instantly activated, we generally do not offer refunds once the service has been delivered.</p>
-      <p>However, if you believe you were charged in error, please contact us within 24 hours.</p>
+      
+      <h3>1. Payment Processing</h3>
+      <p>Jachu accepts payments via UPI. All plan upgrades are verified manually by our administration team. Please allow up to <strong>24 hours</strong> for your plan upgrade to reflect in your dashboard.</p>
+
+      <h3>2. Refund Eligibility</h3>
+      <ul>
+        <li><strong>Failed Upgrades:</strong> If a plan is not activated within 48 hours of payment verification, a full refund will be issued.</li>
+        <li><strong>24-Hour Window:</strong> You may request a refund within 24 hours of purchase if you have used less than 10% of your quota.</li>
+        <li><strong>Exceptions:</strong> No refunds are provided for accounts banned due to Terms of Service violations (e.g., phishing).</li>
+      </ul>
     </div>
 
     <div id="contact" class="section-card">
       <h2>📞 Contact Us</h2>
-      <p>Have questions? We're here to help.</p>
+      <p>Have questions or need to report a violation? We're here to help.</p>
       <p>
         <strong>Email:</strong> <a href="mailto:mail@jachu.xyz" style="color:var(--primary-accent);">mail@jachu.xyz</a><br>
         <strong>Support Hours:</strong> Mon–Sat, 10 AM – 6 PM IST
@@ -111,9 +140,21 @@
     </div>
     
     <div style="text-align: center; color: var(--border-color); margin-bottom: 50px;">
-      &copy; 2025 Jachu. All rights reserved.
+      &copy; 2025 [INSERT YOUR NAME OR COMPANY NAME]. All rights reserved.
     </div>
 
   </div>
+  
+  <script>
+    // Smooth scroll for legal nav
+    document.querySelectorAll('.legal-nav a').forEach(anchor => {
+      anchor.addEventListener('click', function (e) {
+        e.preventDefault();
+        document.querySelector(this.getAttribute('href')).scrollIntoView({
+          behavior: 'smooth'
+        });
+      });
+    });
+  </script>
 </body>
 </html>
