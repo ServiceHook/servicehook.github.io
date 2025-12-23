@@ -1,4 +1,4 @@
-// VERSION: ULTIMATE_FIX_V2
+// VERSION: ADMIN_V3_USERS
 // Please verify this line appears at the top of your file in the Sources tab.
 
 const firebaseConfig = {
@@ -95,6 +95,7 @@ function switchSection(id) {
   if(id === 'manage') loadLinks();
   if(id === 'ban') { loadBannedUsers(); loadBannedIps(); }
   if(id === 'billing') loadBilling();
+  if(id === 'users') loadApiUsers(); // Trigger loading users
 }
 
 // --- DASHBOARD & CHARTS ---
@@ -120,7 +121,6 @@ function loadDashboard() {
     const list = document.getElementById("lastLinks");
     list.innerHTML = "";
     last.forEach(([alias, info]) => {
-      // 🛡️ CRITICAL FIX: Handle missing/corrupt URL data
       const safeUrl = info.url ? info.url : "#";
       const displayUrl = safeUrl.substring(0, 40);
 
@@ -136,12 +136,11 @@ function loadDashboard() {
       list.appendChild(li);
     });
 
-    // 3. Render Chart (With Retry)
+    // 3. Render Chart
     const attemptRender = (retryCount = 0) => {
         if(typeof Chart !== "undefined") {
             renderGrowthChart(values);
         } else if (retryCount < 3) {
-            console.warn("Chart.js loading... retry " + (retryCount+1));
             setTimeout(() => attemptRender(retryCount + 1), 1000);
         }
     };
@@ -159,8 +158,6 @@ function renderGrowthChart(links) {
   for (let i = 6; i >= 0; i--) {
     const d = new Date(); d.setDate(d.getDate() - i);
     labels.push(d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }));
-    
-    // Safety check for createdAt
     const count = links.filter(l => l.createdAt && new Date(l.createdAt).toDateString() === d.toDateString()).length;
     dataPoints.push(count);
   }
@@ -210,7 +207,6 @@ function renderBatch() {
   const batch = allLinks.slice(currentIndex, currentIndex + pageSize);
 
   batch.forEach(([alias, info]) => {
-    // 🛡️ CRITICAL FIX: Handle missing URL safely
     const safeUrl = info.url ? info.url : "#";
     const displayUrl = safeUrl.substring(0, 30);
 
@@ -281,7 +277,6 @@ function searchLinks() {
   const tbody = document.querySelector("#urlTable tbody");
   tbody.innerHTML = "";
   const filtered = allLinks.filter(([alias, info]) => {
-      // 🛡️ CRITICAL FIX: Safe search
       const url = info.url || "";
       return alias.toLowerCase().includes(query) || url.toLowerCase().includes(query);
   });
@@ -297,6 +292,60 @@ function searchLinks() {
       `;
       tbody.appendChild(tr);
   });
+}
+
+// --- NEW API USERS LOGIC ---
+function loadApiUsers() {
+  const tbody = document.querySelector("#apiUserTable tbody");
+  tbody.innerHTML = "<tr><td colspan='5' style='text-align:center'>Fetching users...</td></tr>";
+
+  db.ref("api_keys").once("value").then(snap => {
+    tbody.innerHTML = "";
+    if (!snap.exists()) {
+      tbody.innerHTML = "<tr><td colspan='5' style='text-align:center'>No API users found.</td></tr>";
+      return;
+    }
+
+    const users = [];
+    snap.forEach(child => {
+        users.push({ key: child.key, ...child.val() });
+    });
+
+    // Sort by Limit (Highest First) to see Paid users at top
+    users.sort((a, b) => (b.limit || 0) - (a.limit || 0));
+
+    users.forEach(u => {
+      const isPaid = (u.limit || 50) > 50;
+      const tr = document.createElement("tr");
+      
+      // Highlight paid rows
+      if (isPaid) tr.style.background = "rgba(34, 197, 94, 0.1)";
+
+      tr.innerHTML = `
+        <td style="font-family:monospace; font-size:0.85rem; color:#94a3b8;">${u.uid || 'Unknown'}</td>
+        <td style="font-family:monospace; color:#818cf8;">${u.key.substring(0,8)}...</td>
+        <td>
+           <b>${u.usage || 0}</b> <span style="color:#94a3b8">/ ${u.limit || 50}</span>
+        </td>
+        <td>
+            ${isPaid ? '<span style="color:#4ade80; font-weight:bold;">PAID PLAN</span>' : '<span style="color:#94a3b8;">Free Tier</span>'}
+        </td>
+        <td>
+           <button onclick="resetUserLimit('${u.key}')" class="button btn-sm">Reset</button>
+        </td>
+      `;
+      tbody.appendChild(tr);
+    });
+  });
+}
+
+function resetUserLimit(apiKey) {
+    if(confirm("Reset usage for this key to 0?")) {
+        db.ref(`api_keys/${apiKey}/usage`).set(0).then(() => {
+            showToast("Usage reset successfully", "success");
+            loadApiUsers();
+        });
+    }
 }
 
 // --- BAN SYSTEM (EMAILS) ---
@@ -376,7 +425,7 @@ function loadBannedIps() {
   });
 }
 
-// --- BILLING SYSTEM (CRITICAL FIX) ---
+// --- BILLING SYSTEM ---
 function loadBilling() {
   const tbody = document.querySelector("#billingTable tbody");
   tbody.innerHTML = "<tr><td colspan='5'>Loading requests...</td></tr>";
@@ -391,8 +440,6 @@ function loadBilling() {
     snap.forEach(child => {
       const id = child.key;
       const req = child.val();
-      
-      // 🛡️ CRITICAL FIX: Handle missing User ID
       const displayUid = req.userId ? req.userId.substring(0,6) : "Unknown";
 
       const tr = document.createElement("tr");
@@ -460,3 +507,5 @@ function checkPendingBills() {
         if(badge) badge.style.display = snap.exists() ? "inline-block" : "none";
     });
 }
+
+var mainMessage = "Hello from the old script!";

@@ -34,7 +34,7 @@
       <ul>
         <li onclick="switchSection('dashboard')" id="nav-dashboard" class="active">📊 Dashboard</li>
         <li onclick="switchSection('manage')" id="nav-manage">🔗 Manage Links</li>
-        <li onclick="switchSection('billing')" id="nav-billing">💰 Billing <span id="billBadge" style="background:red; color:white; font-size:0.7rem; padding:2px 5px; border-radius:10px; display:none;">!</span></li>
+        <li onclick="switchSection('users')" id="nav-users">👥 API Users</li> <li onclick="switchSection('billing')" id="nav-billing">💰 Billing <span id="billBadge" style="background:red; color:white; font-size:0.7rem; padding:2px 5px; border-radius:10px; display:none;">!</span></li>
         <li onclick="switchSection('ban')" id="nav-ban">🚫 Banned Users</li>
         <li onclick="logout()" style="margin-top: auto; color: #ef4444;">🚪 Logout</li>
       </ul>
@@ -44,7 +44,6 @@
       
       <div id="dashboard" class="section">
         <h2 style="margin-bottom: 20px;">Overview</h2>
-        
         <div class="stats-grid">
           <div class="stat-card">
             <h3>Total Links</h3>
@@ -55,14 +54,12 @@
             <p id="todayCount" style="color: #4ade80;">0</p>
           </div>
         </div>
-
         <div class="stat-card" style="margin-bottom: 30px; border: 1px solid var(--border-color); padding: 20px;">
           <h3 style="margin-bottom: 15px;">📈 Growth (Last 7 Days)</h3>
           <div style="position: relative; height: 300px; width: 100%;">
             <canvas id="growthChart"></canvas>
           </div>
         </div>
-
         <h3>🕓 Recently Created</h3>
         <ul id="lastLinks" style="list-style: none; padding: 0;"></ul>
       </div>
@@ -75,7 +72,6 @@
              <button onclick="loadLinks()" class="button">Refresh</button>
           </div>
         </div>
-
         <table id="urlTable">
           <thead>
             <tr>
@@ -87,7 +83,6 @@
           </thead>
           <tbody></tbody>
         </table>
-
         <div class="pagination">
           <button onclick="showPrevBatch()" class="button btn-sm">⬅ Prev</button>
           <span id="pageInfo" style="color: var(--text-muted); font-size: 0.9rem;">Page 1</span>
@@ -95,10 +90,33 @@
         </div>
       </div>
 
+      <div id="users" class="section hidden">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+          <h2>API User Database</h2>
+          <button onclick="loadApiUsers()" class="button">🔄 Refresh List</button>
+        </div>
+        <p style="color: var(--text-muted); margin-bottom: 15px;">
+           View all users who have generated an API key. <span style="color:#4ade80;">Green rows</span> indicate paid/upgraded users.
+        </p>
+        <div class="table-container">
+            <table id="apiUserTable">
+              <thead>
+                <tr>
+                  <th>User UID</th>
+                  <th>API Key</th>
+                  <th>Usage / Limit</th>
+                  <th>Status</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody><tr><td colspan="5">Loading users...</td></tr></tbody>
+            </table>
+        </div>
+      </div>
+
       <div id="billing" class="section hidden">
         <h2>💰 Payment Requests</h2>
         <p style="color: var(--text-muted);">Approve Plan Upgrades here.</p>
-        
         <table id="billingTable">
             <thead>
                 <tr>
@@ -116,29 +134,28 @@
       <div id="ban" class="section hidden">
         <h2>🚫 Restricted Users</h2>
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
-          
           <div class="shortener-box" style="background: rgba(255,255,255,0.03); padding: 20px; border-radius: 12px;">
              <h3>📧 Banned Emails</h3>
-             <p style="color: var(--text-muted); font-size: 0.9rem;">These users cannot login.</p>
              <ul id="bannedList" style="list-style: none; padding: 0; margin-top: 15px;"></ul>
           </div>
-
           <div class="shortener-box" style="background: rgba(255,255,255,0.03); padding: 20px; border-radius: 12px;">
              <h3>💻 Banned IPs</h3>
-             <p style="color: var(--text-muted); font-size: 0.9rem;">These IPs cannot create links (Guest).</p>
              <div style="display: flex; gap: 10px; margin-bottom: 15px;">
-               <input type="text" id="ipInput" placeholder="Enter IP (e.g. 192.168.1.1)" class="input" style="margin:0; padding: 8px;">
+               <input type="text" id="ipInput" placeholder="IP Address" class="input" style="margin:0; padding: 8px;">
                <button onclick="manualBanIp()" class="button" style="width: auto;">Ban</button>
              </div>
              <ul id="bannedIpList" style="list-style: none; padding: 0;"></ul>
           </div>
-
         </div>
       </div>
 
     </div>
   </div>
 
-  <script src="scripta.js"></script>
+  <body>
+    <script src="scripta.js"></script>
+
+    <script src="scripta2.js"></script>
+</body>
 </body>
 </html>
