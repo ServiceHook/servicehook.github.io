@@ -1,3 +1,6 @@
+// VERSION: ULTIMATE_FIX_V2
+// Please verify this line appears at the top of your file in the Sources tab.
+
 const firebaseConfig = {
   apiKey: "AIzaSyBKA3bxy1caa0QiGrn6AihtxufiO7xxTnI",
   authDomain: "futrshortener-7acf0.firebaseapp.com",
@@ -12,7 +15,6 @@ firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
 // --- CONFIGURATION ---
-// IMPORTANT: Change this email to your personal Google Account email
 const ADMIN_EMAIL = "ztenkammu@gmail.com"; 
 
 // --- TOAST SYSTEM ---
@@ -107,7 +109,7 @@ function loadDashboard() {
     const todayStr = new Date().toDateString();
     let todayCount = 0;
     values.forEach(link => {
-      if (new Date(link.createdAt).toDateString() === todayStr) todayCount++;
+      if (link.createdAt && new Date(link.createdAt).toDateString() === todayStr) todayCount++;
     });
 
     document.getElementById("todayCount").innerText = todayCount;
@@ -118,6 +120,10 @@ function loadDashboard() {
     const list = document.getElementById("lastLinks");
     list.innerHTML = "";
     last.forEach(([alias, info]) => {
+      // 🛡️ CRITICAL FIX: Handle missing/corrupt URL data
+      const safeUrl = info.url ? info.url : "#";
+      const displayUrl = safeUrl.substring(0, 40);
+
       const li = document.createElement("li");
       li.style.background = "rgba(255,255,255,0.03)";
       li.style.padding = "10px";
@@ -125,21 +131,18 @@ function loadDashboard() {
       li.style.borderRadius = "8px";
       li.innerHTML = `
         <strong style="color:var(--primary-accent);">${alias}</strong> 
-        <span style="color:var(--text-muted);"> → ${info.url.substring(0, 40)}...</span>
+        <span style="color:var(--text-muted);"> → ${displayUrl}...</span>
       `;
       list.appendChild(li);
     });
 
     // 3. Render Chart (With Retry)
-    // Sometimes JS loads slower than DB. We try 3 times.
     const attemptRender = (retryCount = 0) => {
         if(typeof Chart !== "undefined") {
             renderGrowthChart(values);
         } else if (retryCount < 3) {
             console.warn("Chart.js loading... retry " + (retryCount+1));
             setTimeout(() => attemptRender(retryCount + 1), 1000);
-        } else {
-            console.error("Chart.js failed to load.");
         }
     };
     attemptRender();
@@ -156,7 +159,10 @@ function renderGrowthChart(links) {
   for (let i = 6; i >= 0; i--) {
     const d = new Date(); d.setDate(d.getDate() - i);
     labels.push(d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }));
-    dataPoints.push(links.filter(l => new Date(l.createdAt).toDateString() === d.toDateString()).length);
+    
+    // Safety check for createdAt
+    const count = links.filter(l => l.createdAt && new Date(l.createdAt).toDateString() === d.toDateString()).length;
+    dataPoints.push(count);
   }
 
   if (growthChartInstance) growthChartInstance.destroy();
@@ -204,12 +210,16 @@ function renderBatch() {
   const batch = allLinks.slice(currentIndex, currentIndex + pageSize);
 
   batch.forEach(([alias, info]) => {
+    // 🛡️ CRITICAL FIX: Handle missing URL safely
+    const safeUrl = info.url ? info.url : "#";
+    const displayUrl = safeUrl.substring(0, 30);
+
     db.ref("clicks/" + alias).once("value").then(clickSnap => {
       const tr = document.createElement("tr");
       const clicks = clickSnap.exists() ? Object.keys(clickSnap.val()).length : 0;
       tr.innerHTML = `
         <td><strong>${alias}</strong></td>
-        <td><a href="${info.url}" target="_blank">${info.url.substring(0, 30)}...</a></td>
+        <td><a href="${safeUrl}" target="_blank">${displayUrl}...</a></td>
         <td>${clicks}</td>
         <td>
           <div class="action-group">
@@ -270,12 +280,18 @@ function searchLinks() {
   const query = document.getElementById("searchInput").value.toLowerCase();
   const tbody = document.querySelector("#urlTable tbody");
   tbody.innerHTML = "";
-  const filtered = allLinks.filter(([alias, info]) => alias.toLowerCase().includes(query) || info.url.toLowerCase().includes(query));
+  const filtered = allLinks.filter(([alias, info]) => {
+      // 🛡️ CRITICAL FIX: Safe search
+      const url = info.url || "";
+      return alias.toLowerCase().includes(query) || url.toLowerCase().includes(query);
+  });
+  
   filtered.slice(0, pageSize).forEach(([alias, info]) => {
+     const safeUrl = info.url || "#";
      const tr = document.createElement("tr");
      tr.innerHTML = `
         <td><strong>${alias}</strong></td>
-        <td><a href="${info.url}" target="_blank">${info.url.substring(0, 30)}...</a></td>
+        <td><a href="${safeUrl}" target="_blank">${safeUrl.substring(0, 30)}...</a></td>
         <td>-</td>
         <td><div class="action-group"><button onclick="deleteLink('${alias}')" class="button btn-sm btn-danger">🗑️</button></div></td>
       `;
@@ -360,7 +376,7 @@ function loadBannedIps() {
   });
 }
 
-// --- BILLING SYSTEM ---
+// --- BILLING SYSTEM (CRITICAL FIX) ---
 function loadBilling() {
   const tbody = document.querySelector("#billingTable tbody");
   tbody.innerHTML = "<tr><td colspan='5'>Loading requests...</td></tr>";
@@ -375,6 +391,8 @@ function loadBilling() {
     snap.forEach(child => {
       const id = child.key;
       const req = child.val();
+      
+      // 🛡️ CRITICAL FIX: Handle missing User ID
       const displayUid = req.userId ? req.userId.substring(0,6) : "Unknown";
 
       const tr = document.createElement("tr");
