@@ -20,6 +20,8 @@
   <link rel="stylesheet" href="/file/styles.css" />
   <link rel="manifest" href="/manifest.json">
   <meta name="theme-color" content="#020617">
+
+  <script src="https://www.google.com/recaptcha/api.js" async defer></script>
 </head>
 <body>
 
@@ -97,6 +99,10 @@
       <button class="button" id="loginBtn" onclick="signIn()" style="margin-bottom: 10px;">Log In</button>
       <button class="button" id="signupBtn" onclick="signUp()" style="background: transparent; border: 1px solid rgba(255,255,255,0.2);">Create Account</button>
       
+      <div id="recaptcha-wrapper" style="display:none; margin: 15px auto;">
+        <div class="g-recaptcha" data-sitekey="6LfqqjQsAAAAAPx_rA0yrW5HMvb6BoFzX_vk07-3" style="display: inline-block;"></div>
+      </div>
+
       <button id="resetBtn" onclick="resetPassword()" style="background:none; border:none; color:#94a3b8; margin-top:15px; cursor:pointer;">Forgot Password?</button>
       
       <div style="margin-top: 20px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 15px;">

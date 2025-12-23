@@ -85,6 +85,11 @@ auth.onAuthStateChanged(user => {
 function toggleAuthModal() {
   const modal = document.getElementById("authModal");
   modal.style.display = modal.style.display === "flex" ? "none" : "flex";
+  
+  // Hide captcha when closing/opening freshly
+  document.getElementById("recaptcha-wrapper").style.display = "none";
+  const resetBtn = document.getElementById("resetBtn");
+  if(resetBtn) resetBtn.innerText = "Forgot Password?";
 }
 
 function signUp() {
@@ -97,8 +102,6 @@ function signUp() {
   btn.innerText = "Creating...";
   auth.createUserWithEmailAndPassword(email, password)
     .then(() => { 
-      // Account created, standard Firebase flow handles login,
-      // but we let onAuthStateChanged handle the UI updates.
       toggleAuthModal(); 
       btn.innerText = "Create Account"; 
       showToast("Account created successfully!", "success");
@@ -126,18 +129,15 @@ function signIn() {
       
       db.ref("bannedEmails/" + encodedEmail).once("value").then(snap => {
         if (snap.exists()) {
-          // USER IS BANNED
-          auth.signOut(); // Kick them out immediately
+          auth.signOut();
           showToast("Your mail was banned please contact us for apeal", "error");
           btn.innerText = "Log In";
         } else {
-          // USER IS OK
           toggleAuthModal(); 
           btn.innerText = "Log In"; 
           showToast("Welcome back!", "success");
         }
       });
-      // 🛑 BAN CHECK END
     })
     .catch(err => { 
       showToast(cleanError(err.message), "error"); 
@@ -152,11 +152,14 @@ function signOut() {
   });
 }
 
+// --- UPDATED RESET PASSWORD (WITH RECAPTCHA) ---
 function resetPassword() {
   const emailField = document.getElementById("email");
   const email = emailField.value.trim();
   const btn = document.getElementById("resetBtn");
+  const captchaWrapper = document.getElementById("recaptcha-wrapper");
   
+  // 1. Check Email
   if (!email) {
     showToast("Please type your email in the box above first!", "error");
     emailField.focus();
@@ -165,6 +168,22 @@ function resetPassword() {
     return;
   }
 
+  // 2. Show Captcha if hidden
+  if (captchaWrapper.style.display === "none") {
+    captchaWrapper.style.display = "block";
+    btn.innerText = "Verify & Send Link";
+    showToast("Please complete the captcha below.", "neutral");
+    return;
+  }
+
+  // 3. Verify Captcha
+  const response = grecaptcha.getResponse();
+  if (response.length === 0) {
+    showToast("Please complete the captcha checkbox!", "error");
+    return;
+  }
+
+  // 4. Send Email
   btn.innerText = "Sending...";
   btn.disabled = true;
 
@@ -172,11 +191,14 @@ function resetPassword() {
     .then(() => {
       showToast("Reset link sent! Check your inbox.", "success");
       btn.innerText = "Email Sent ✅";
+      captchaWrapper.style.display = "none";
+      grecaptcha.reset(); // Reset captcha for next time
     })
     .catch(err => {
       showToast(cleanError(err.message), "error");
       btn.innerText = "Forgot Password?";
       btn.disabled = false;
+      grecaptcha.reset();
     });
 }
 
@@ -205,7 +227,6 @@ function getExpiryTimestamp(option, customDate) {
   return null;
 }
 
-// UPDATED TO ASYNC FOR IP CHECK
 async function shorten() {
   const longUrl = document.getElementById("longUrl").value.trim();
   let alias = document.getElementById("customAlias").value.trim();
@@ -214,31 +235,27 @@ async function shorten() {
   const customExp = document.getElementById("customExpiry").value;
   const resultBox = document.getElementById("result");
 
-  // Reset UI
   resultBox.innerHTML = "";
   
   if (!longUrl) return showToast("Please paste a URL to shorten", "error");
   
-  // 🛑 ANONYMOUS IP BAN CHECK
+  // IP BAN CHECK FOR GUESTS
   if (!currentUser) {
     try {
       showLoader(true);
-      // Fetch IP from public API
       const ipRes = await fetch('https://api.ipify.org?format=json');
       const ipData = await ipRes.json();
       const userIp = ipData.ip;
       
-      // Check database for banned IP (stored as base64 to avoid dots)
       const bannedSnap = await db.ref("bannedIps/" + btoa(userIp)).get();
       
       if (bannedSnap.exists()) {
         showLoader(false);
         showToast("Your IP was banned please contact us for apeal", "error");
-        return; // Stop execution
+        return;
       }
     } catch (e) {
       console.warn("IP Check failed, allowing:", e);
-      // We allow them to proceed if IP check fails to avoid blocking users due to API errors
     }
   }
 
@@ -246,13 +263,13 @@ async function shorten() {
 
   if (!alias) alias = Math.random().toString(36).substring(2, 8);
 
-  showLoader(true); // Ensure loader is on
+  showLoader(true);
   
   const ref = db.ref("links/" + alias);
 
   ref.once("value").then(snapshot => {
     if (snapshot.exists()) {
-      showLoader(false); // STOP LOADING
+      showLoader(false);
       showToast("That alias is already taken", "error");
       return;
     }
@@ -267,7 +284,7 @@ async function shorten() {
     };
 
     ref.set(payload, err => {
-      showLoader(false); // STOP LOADING
+      showLoader(false);
       
       if (err) {
         showToast("Database error: " + err.message, "error");
@@ -275,7 +292,6 @@ async function shorten() {
         showToast("Link created successfully!", "success");
         const shortUrl = `${location.origin}/${alias}`;
         
-        // FORCE UI UPDATE
         resultBox.style.display = "block";
         resultBox.innerHTML = `
           <div class="og-card" style="animation: slideUp 0.5s ease-out;">
