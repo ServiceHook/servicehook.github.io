@@ -52,6 +52,35 @@
         .usage-track { background: rgba(255,255,255,0.1); height: 10px; width: 100%; border-radius: 5px; margin: 20px 0 10px; overflow: hidden; }
         .usage-fill { height: 100%; background: linear-gradient(90deg, #6366f1, #a855f7); width: 0%; transition: width 1s; }
 
+        /* ===== POPUP MODAL STYLES ===== */
+        .modal-overlay {
+            display: none; position: fixed; inset: 0; 
+            background: rgba(0, 0, 0, 0.8); backdrop-filter: blur(5px);
+            z-index: 9999; justify-content: center; align-items: center;
+        }
+        .modal-content {
+            background: #0f172a; border: 1px solid var(--border-color);
+            padding: 30px; border-radius: 24px; width: 90%; max-width: 420px;
+            text-align: center; position: relative;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            animation: popIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        @keyframes popIn { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+        
+        .pay-tabs { display: flex; gap: 10px; margin-bottom: 20px; background: rgba(0,0,0,0.2); padding: 5px; border-radius: 10px; }
+        .pay-tab { flex: 1; padding: 10px; background: transparent; border: none; color: var(--text-muted); cursor: pointer; border-radius: 8px; font-weight: 500; transition: 0.2s; }
+        .pay-tab.active { background: var(--primary-accent); color: white; shadow: 0 2px 5px rgba(0,0,0,0.2); }
+
+        .qr-frame { background: white; padding: 15px; border-radius: 12px; display: inline-block; margin-bottom: 15px; }
+        .qr-img { width: 180px; height: 180px; display: block; }
+        
+        .upi-box { 
+            background: rgba(255,255,255,0.05); border: 1px solid var(--border-color);
+            padding: 15px; border-radius: 12px; margin-bottom: 20px; display: flex; 
+            justify-content: space-between; align-items: center;
+        }
+        .upi-text { font-family: monospace; font-size: 1.1rem; color: #4ade80; }
+
         @media (max-width: 768px) { .dash-container { grid-template-columns: 1fr; } }
     </style>
 </head>
@@ -61,6 +90,48 @@
         <div class="shortener-box" style="text-align: center; max-width: 400px;">
             <h2>🔐 Developer Access</h2>
             <a href="/index.html" class="button">Log In / Sign Up</a>
+        </div>
+    </div>
+
+    <div id="paymentModal" class="modal-overlay">
+        <div class="modal-content">
+            <button onclick="closeModal()" style="position:absolute; top:15px; right:15px; background:none; border:none; color:white; font-size:1.2rem; cursor:pointer;">✕</button>
+            
+            <h2 style="justify-content:center; margin-bottom: 5px;">Make Payment</h2>
+            <p id="payDetailText" style="color:var(--text-muted); font-size:0.9rem; margin-top:0; margin-bottom: 20px;"></p>
+
+            <div class="pay-tabs">
+                <button onclick="switchTab('qr')" id="tab-qr" class="pay-tab active">Scan QR (Recommended)</button>
+                <button onclick="switchTab('upi')" id="tab-upi" class="pay-tab">UPI ID</button>
+            </div>
+
+            <div id="view-qr">
+                <div class="qr-frame">
+                    <img id="upiQrDisplay" class="qr-img" src="" alt="Generating QR..." />
+                </div>
+                <p style="font-size:0.8rem; color:#f70303; margin-bottom: 15px;">
+                    Open Googlepay, Phonepe, Bhim, Or Any Other Upi App To Scan And Pay
+                </p>    
+                <p style="font-size:0.8rem; color:#6366f1; margin-bottom: 15px;">
+                    Note: Amount & Email are pre-filled!
+                </p>
+            </div>
+
+            <div id="view-upi" style="display: none;">
+                <div class="upi-box">
+                    <span id="upiIdText" class="upi-text">jachu.xyz@axl</span>
+                    <button onclick="copyUpi()" class="button" style="width: auto; padding: 6px 12px; font-size: 0.8rem;">Copy</button>
+                </div>
+                <p style="font-size:0.8rem; color:#94a3b8; margin-bottom: 15px;">
+                    Open any UPI app (GPay, PhonePe) and pay to this ID.
+                </p>
+            </div>
+            
+            <div style="text-align: left; margin-top: 10px; padding-top: 15px; border-top: 1px solid var(--border-color);">
+                <label style="font-size:0.8rem; color:var(--text-muted); margin-bottom: 5px; display:block;">Transaction ID / UTR (Required):</label>
+                <input type="text" id="modalTxnId" class="input" placeholder="e.g. 321456789012" style="margin-bottom:10px;" />
+                <button onclick="submitModalPayment()" id="modalPayBtn" class="button">✅ Payment Complete</button>
+            </div>
         </div>
     </div>
 
@@ -95,15 +166,15 @@
                 <h2>🚀 Add Links</h2>
                 <p style="color:var(--text-muted); font-size:0.9rem;">Packs stack (e.g., 50 + 219 = 269 limit).</p>
                 <div class="pricing-grid">
-                    <div class="plan-card" onclick="selectPlan(199, 219, 'Basic Pro')">
+                    <div class="plan-card" onclick="openPaymentModal(199, 219, 'Basic Pro')">
                         <div style="font-weight:700;">+219 Links</div>
                         <div style="font-size:1.2rem; color:#4ade80;">₹199</div>
                     </div>
-                    <div class="plan-card" onclick="selectPlan(399, 450, 'Standard')">
+                    <div class="plan-card" onclick="openPaymentModal(399, 450, 'Standard')">
                         <div style="font-weight:700;">+450 Links</div>
                         <div style="font-size:1.2rem; color:#4ade80;">₹399</div>
                     </div>
-                    <div class="plan-card" onclick="selectPlan(599, 700, 'Premium')">
+                    <div class="plan-card" onclick="openPaymentModal(599, 700, 'Premium')">
                         <div style="font-weight:700;">+700 Links</div>
                         <div style="font-size:1.2rem; color:#4ade80;">₹599</div>
                     </div>
@@ -116,15 +187,7 @@
                 <div id="customPlanInput" style="display:none; margin-top:15px; background:rgba(255,255,255,0.05); padding:10px; border-radius:8px;">
                     <input type="number" id="customLimit" class="input" placeholder="e.g. 1000" oninput="calcCustomPrice()">
                     <div id="customPriceResult" style="text-align:right; font-weight:bold; color:#4ade80;">₹0</div>
-                    <button onclick="selectCustomPlan()" class="button" style="margin-top:5px;">Select</button>
-                </div>
-
-                <div id="paymentSection" style="display:none; margin-top:20px; border-top:1px solid var(--border-color); padding-top:20px;">
-                    <h3 style="margin:0;">💰 Payment</h3>
-                    <p id="selPlanDetail" style="color:#94a3b8; margin-bottom:10px;"></p>
-                    <div style="background:#0f172a; padding:10px; border:1px dashed #6366f1; text-align:center; margin-bottom:10px;">UPI: jachu.xyz@axl</div>
-                    <input type="text" id="txnId" class="input" placeholder="Enter Transaction ID" />
-                    <button onclick="submitPayment()" class="button" id="payBtn">Submit Request</button>
+                    <button onclick="selectCustomPlan()" class="button" style="margin-top:5px;">Proceed to Pay</button>
                 </div>
             </div>
 
@@ -222,6 +285,7 @@ print(response.json())</code></pre>
         let currentUser = null;
         let currentKey = "";
         let selectedPlan = null;
+        const MY_UPI_ID = "jachu.xyz@axl"; // Change this if needed
 
         auth.onAuthStateChanged(user => {
             if (user) {
@@ -253,8 +317,6 @@ print(response.json())</code></pre>
                     currentKey = data.api_key;
                     keyDisplay.innerText = currentKey; 
                     updateUsageUI(data.usage, data.limit);
-                } else {
-                    alert("Error: " + (data.error || data.message || "Unknown error"));
                 }
             } catch (e) { console.error(e); }
             if(btn) btn.disabled = false;
@@ -269,21 +331,57 @@ print(response.json())</code></pre>
             document.getElementById('planBadge').innerText = limit > 50 ? "PRO Plan" : "Free Plan";
         }
 
-        // 2. PAYMENT & PLAN
-        function selectPlan(price, limit, name) {
+        // 2. PAYMENT & MODAL LOGIC (DUAL METHOD)
+        function openPaymentModal(price, limit, name) {
             selectedPlan = { price, limit, name };
-            document.getElementById('customPlanInput').style.display = 'none';
-            document.getElementById('paymentSection').style.display = 'block';
-            document.getElementById('selPlanDetail').innerText = `Selected: ${name} (+${limit} Links) for ₹${price}`;
             
-            document.querySelectorAll('.plan-card').forEach(c => c.classList.remove('selected'));
-            event.currentTarget.classList.add('selected');
+            // UI Updates
+            document.getElementById('payDetailText').innerText = `Plan: ${name} (+${limit} Links) for ₹${price}`;
+            document.getElementById('modalTxnId').value = ""; 
+            
+            // 1. Generate QR (Auto)
+            const upiName = "Jachu Services";
+            const userNote = currentUser.email; 
+            const noteSafe = userNote.length > 50 ? userNote.substring(0,47)+"..." : userNote;
+            const upiLink = `upi://pay?pa=${MY_UPI_ID}&pn=${encodeURIComponent(upiName)}&am=${price}&tn=${encodeURIComponent(noteSafe)}`;
+            const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(upiLink)}`;
+            
+            document.getElementById('upiQrDisplay').src = qrUrl;
+
+            // 2. Set UPI ID Text
+            document.getElementById('upiIdText').innerText = MY_UPI_ID;
+            
+            // Reset Tabs
+            switchTab('qr');
+            document.getElementById('paymentModal').style.display = 'flex';
+        }
+
+        function switchTab(tab) {
+            // UI Toggle
+            document.getElementById('tab-qr').classList.toggle('active', tab === 'qr');
+            document.getElementById('tab-upi').classList.toggle('active', tab === 'upi');
+            
+            // Content Toggle
+            document.getElementById('view-qr').style.display = tab === 'qr' ? 'block' : 'none';
+            document.getElementById('view-upi').style.display = tab === 'upi' ? 'block' : 'none';
+        }
+
+        function copyUpi() {
+            navigator.clipboard.writeText(MY_UPI_ID).then(() => {
+                const btn = document.querySelector('#view-upi button');
+                const originalText = btn.innerText;
+                btn.innerText = "Copied!";
+                setTimeout(() => btn.innerText = originalText, 2000);
+            });
+        }
+
+        function closeModal() {
+            document.getElementById('paymentModal').style.display = 'none';
         }
 
         function toggleCustomPlan() {
             const el = document.getElementById('customPlanInput');
             el.style.display = el.style.display === 'none' ? 'block' : 'none';
-            document.getElementById('paymentSection').style.display = 'none';
         }
 
         function calcCustomPrice() {
@@ -297,26 +395,31 @@ print(response.json())</code></pre>
         function selectCustomPlan() {
             const calc = calcCustomPrice();
             if(!calc || calc.limit <= 700) return alert("Invalid amount");
-            selectPlan(calc.price, calc.limit, "Custom Pack");
+            openPaymentModal(calc.price, calc.limit, "Custom Pack");
         }
 
-        function submitPayment() {
-            const txnId = document.getElementById('txnId').value.trim();
-            if(!txnId || !selectedPlan) return alert("Details missing");
-            const btn = document.getElementById('payBtn');
+        function submitModalPayment() {
+            const txnId = document.getElementById('modalTxnId').value.trim();
+            const btn = document.getElementById('modalPayBtn');
+            
+            if(!txnId) {
+                if(!confirm("No Transaction ID entered. Admin verification may fail. Continue?")) return;
+            }
+
             btn.innerText = "Submitting..."; btn.disabled = true;
 
             db.ref('payment_requests').push({
                 userId: currentUser.uid,
                 userEmail: currentUser.email,
-                txnId: txnId,
+                txnId: txnId || "No ID - Check Note: " + currentUser.email,
                 planName: selectedPlan.name,
                 requestedLimit: selectedPlan.limit,
                 amount: selectedPlan.price,
                 timestamp: Date.now()
             }).then(() => {
-                alert("Request Sent! Admin will approve shortly.");
-                location.reload();
+                alert("Payment Submitted! Admin will verify and approve shortly.");
+                closeModal();
+                btn.innerText = "✅ Payment Complete"; btn.disabled = false;
             });
         }
 
@@ -334,7 +437,6 @@ print(response.json())</code></pre>
                         rows.unshift({ key: c.key, ...d });
                     }
                 });
-
                 if(rows.length === 0) { tbody.innerHTML = "<tr><td colspan='4'>No API links found.</td></tr>"; return; }
 
                 rows.forEach(r => {
@@ -364,8 +466,5 @@ print(response.json())</code></pre>
             ['js','curl','py'].forEach(t => document.getElementById(`code-${t}`).style.display = t===id?'block':'none');
         }
     </script>
-
-    <script src='https://cdn.jotfor.ms/agent/embedjs/0197fa7374c97c9fade854e7f577b1bedcde/embed.js'>
-</script>
 </body>
 </html>
