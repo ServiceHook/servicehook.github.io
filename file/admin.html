@@ -34,7 +34,8 @@
       <ul>
         <li onclick="switchSection('dashboard')" id="nav-dashboard" class="active">📊 Dashboard</li>
         <li onclick="switchSection('manage')" id="nav-manage">🔗 Manage Links</li>
-        <li onclick="switchSection('users')" id="nav-users">👥 API Users</li> <li onclick="switchSection('billing')" id="nav-billing">💰 Billing <span id="billBadge" style="background:red; color:white; font-size:0.7rem; padding:2px 5px; border-radius:10px; display:none;">!</span></li>
+        <li onclick="switchSection('users')" id="nav-users">👥 API Users</li>
+        <li onclick="switchSection('billing')" id="nav-billing">💰 Billing <span id="billBadge" style="background:red; color:white; font-size:0.7rem; padding:2px 5px; border-radius:10px; display:none;">!</span></li>
         <li onclick="switchSection('ban')" id="nav-ban">🚫 Banned Users</li>
         <li onclick="logout()" style="margin-top: auto; color: #ef4444;">🚪 Logout</li>
       </ul>
@@ -96,20 +97,19 @@
           <button onclick="loadApiUsers()" class="button">🔄 Refresh List</button>
         </div>
         <p style="color: var(--text-muted); margin-bottom: 15px;">
-           View all users who have generated an API key. <span style="color:#4ade80;">Green rows</span> indicate paid/upgraded users.
+           Manage usage limits. <span style="color:#4ade80;">Green rows</span> indicate paid/upgraded users.
         </p>
         <div class="table-container">
             <table id="apiUserTable">
               <thead>
                 <tr>
-                  <th>User UID</th>
-                  <th>API Key</th>
+                  <th>User Identity (UID & Email)</th>
                   <th>Usage / Limit</th>
                   <th>Status</th>
-                  <th>Action</th>
+                  <th>Actions</th>
                 </tr>
               </thead>
-              <tbody><tr><td colspan="5">Loading users...</td></tr></tbody>
+              <tbody><tr><td colspan="4">Loading users...</td></tr></tbody>
             </table>
         </div>
       </div>
@@ -152,10 +152,6 @@
     </div>
   </div>
 
-  <body>
-    <script src="scripta.js"></script>
-
-    <script src="scripta2.js"></script>
-</body>
+  <script src="scripta.js"></script>
 </body>
 </html>

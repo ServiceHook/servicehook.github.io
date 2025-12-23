@@ -8,7 +8,7 @@ export async function onRequestPost(context) {
 
     if (!idToken) return new Response(JSON.stringify({ error: "Missing Token" }), { status: 401 });
 
-    // 1. VERIFY USER
+    // 1. VERIFY USER via Google Identity Toolkit
     const verifyUrl = `https://identitytoolkit.googleapis.com/v1/accounts:lookup?key=${env.FIREBASE_WEB_API_KEY}`;
     const googleRes = await fetch(verifyUrl, {
       method: 'POST',
@@ -22,14 +22,15 @@ export async function onRequestPost(context) {
     }
 
     const uid = googleData.users[0].localId;
+    const email = googleData.users[0].email; // <--- CAPTURE EMAIL HERE
 
     // 2. CHECK EXISTING KEY
     const userLookupUrl = `${env.FIREBASE_DB_URL}/users/${uid}/api_key.json?auth=${env.FIREBASE_DB_SECRET}`;
     const existingKeyRes = await fetch(userLookupUrl);
     let currentKey = await existingKeyRes.json();
     
-    // Default Data (Free Tier)
-    let keyData = { usage: 0, limit: 50, uid: uid }; 
+    // Default Data (Include Email now)
+    let keyData = { usage: 0, limit: 50, uid: uid, email: email }; 
 
     // 3. HANDLE PRESERVATION OR CREATION
     if (currentKey) {
@@ -39,7 +40,10 @@ export async function onRequestPost(context) {
       const existingData = await statsRes.json();
       
       if (existingData) {
-        keyData = existingData; // Copy usage/limit
+        keyData.usage = existingData.usage || 0;
+        keyData.limit = existingData.limit || 50;
+        // Ensure email is updated in the preserved data
+        keyData.email = email;
       }
 
       if (shouldRegenerate) {
@@ -52,10 +56,16 @@ export async function onRequestPost(context) {
         // Update User Mapping
         await fetch(userLookupUrl, { method: 'PUT', body: JSON.stringify(currentKey) });
         
-        // Save New Key with PRESERVED Data
+        // Save New Key
         await fetch(`${env.FIREBASE_DB_URL}/api_keys/${currentKey}.json?auth=${env.FIREBASE_DB_SECRET}`, {
           method: 'PUT',
           body: JSON.stringify(keyData)
+        });
+      } else {
+        // Just update the existing key with the email if it was missing
+        await fetch(keyStatsUrl, {
+          method: 'PATCH', // Use PATCH to update specific fields
+          body: JSON.stringify({ email: email })
         });
       }
     } else {

@@ -1,4 +1,4 @@
-// VERSION: ADMIN_V3_USERS
+// VERSION: ADMIN_EMAIL_FIX_V2
 // Please verify this line appears at the top of your file in the Sources tab.
 
 const firebaseConfig = {
@@ -95,7 +95,7 @@ function switchSection(id) {
   if(id === 'manage') loadLinks();
   if(id === 'ban') { loadBannedUsers(); loadBannedIps(); }
   if(id === 'billing') loadBilling();
-  if(id === 'users') loadApiUsers(); // Trigger loading users
+  if(id === 'users') loadApiUsers(); 
 }
 
 // --- DASHBOARD & CHARTS ---
@@ -294,49 +294,96 @@ function searchLinks() {
   });
 }
 
-// --- NEW API USERS LOGIC ---
-function loadApiUsers() {
+// --- API USERS LOGIC (Fix: Cross-Reference Email from Links) ---
+async function loadApiUsers() {
   const tbody = document.querySelector("#apiUserTable tbody");
-  tbody.innerHTML = "<tr><td colspan='5' style='text-align:center'>Fetching users...</td></tr>";
+  tbody.innerHTML = "<tr><td colspan='4' style='text-align:center'>Fetching users & cross-referencing emails...</td></tr>";
 
-  db.ref("api_keys").once("value").then(snap => {
-    tbody.innerHTML = "";
-    if (!snap.exists()) {
-      tbody.innerHTML = "<tr><td colspan='5' style='text-align:center'>No API users found.</td></tr>";
+  try {
+    // 1. Fetch API Keys
+    const keysSnap = await db.ref("api_keys").once("value");
+    if (!keysSnap.exists()) {
+      tbody.innerHTML = "<tr><td colspan='4' style='text-align:center'>No API users found.</td></tr>";
       return;
     }
 
+    // 2. Fetch Links (To find missing emails)
+    const linksSnap = await db.ref("links").once("value");
+    const uidToEmailMap = {};
+    if (linksSnap.exists()) {
+        linksSnap.forEach(child => {
+            const l = child.val();
+            if (l.userId && l.userEmail && l.userEmail !== "null") {
+                uidToEmailMap[l.userId] = l.userEmail;
+            }
+        });
+    }
+
     const users = [];
-    snap.forEach(child => {
+    keysSnap.forEach(child => {
         users.push({ key: child.key, ...child.val() });
     });
 
-    // Sort by Limit (Highest First) to see Paid users at top
+    // Sort by Limit (Highest First)
     users.sort((a, b) => (b.limit || 0) - (a.limit || 0));
+
+    tbody.innerHTML = ""; // Clear loading message
 
     users.forEach(u => {
       const isPaid = (u.limit || 50) > 50;
       const tr = document.createElement("tr");
       
-      // Highlight paid rows
       if (isPaid) tr.style.background = "rgba(34, 197, 94, 0.1)";
 
+      // RESOLVE EMAIL: Use saved email OR fallback to link map
+      const resolvedEmail = u.email || uidToEmailMap[u.uid] || null;
+
+      const displayUid = u.uid 
+          ? `<span style="color:#60a5fa; font-family:monospace;">${u.uid}</span>` 
+          : '<span style="color:red">No UID</span>';
+          
+      const displayEmail = resolvedEmail 
+          ? `<div style="color:#f8fafc; font-size:0.9rem;">${resolvedEmail}</div>` 
+          : `<div style="color:#94a3b8; font-size:0.8rem; font-style:italic;">Email not linked (No links created yet)</div>`;
+
       tr.innerHTML = `
-        <td style="font-family:monospace; font-size:0.85rem; color:#94a3b8;">${u.uid || 'Unknown'}</td>
-        <td style="font-family:monospace; color:#818cf8;">${u.key.substring(0,8)}...</td>
         <td>
-           <b>${u.usage || 0}</b> <span style="color:#94a3b8">/ ${u.limit || 50}</span>
+           ${displayEmail}
+           <div style="font-size:0.75rem; color:#94a3b8; margin-top:4px;">UID: ${displayUid}</div>
         </td>
         <td>
-            ${isPaid ? '<span style="color:#4ade80; font-weight:bold;">PAID PLAN</span>' : '<span style="color:#94a3b8;">Free Tier</span>'}
+           <b style="font-size:1.1rem;">${u.usage || 0}</b> <span style="color:#94a3b8">/ ${u.limit || 50}</span>
         </td>
         <td>
-           <button onclick="resetUserLimit('${u.key}')" class="button btn-sm">Reset</button>
+            ${isPaid ? '<span style="color:#4ade80; font-weight:bold;">PAID</span>' : '<span style="color:#94a3b8;">Free</span>'}
+        </td>
+        <td>
+           <div class="action-group" style="flex-wrap: wrap; gap: 5px;">
+             <button onclick="changeUsageLimit('${u.key}', ${u.limit || 50})" class="button btn-sm" style="background:#4CAF50;">✏️ Edit Limit</button>
+             <button onclick="resetUserLimit('${u.key}')" class="button btn-sm" style="background:#ef4444;">Reset Usage</button>
+           </div>
         </td>
       `;
       tbody.appendChild(tr);
     });
-  });
+
+  } catch (error) {
+    console.error(error);
+    tbody.innerHTML = `<tr><td colspan='4' style='color:#ef4444; text-align:center'>Error loading users: ${error.message}</td></tr>`;
+  }
+}
+
+// Function to Edit Usage Limit
+function changeUsageLimit(apiKey, currentLimit) {
+    const newLimit = prompt(`Enter new daily/monthly limit for this key:`, currentLimit);
+    if (newLimit !== null && newLimit.trim() !== "" && !isNaN(newLimit)) {
+        db.ref(`api_keys/${apiKey}`).update({ limit: parseInt(newLimit) })
+          .then(() => {
+              showToast("Limit updated successfully!", "success");
+              loadApiUsers(); // Refresh table to see change
+          })
+          .catch(err => showToast("Error: " + err.message, "error"));
+    }
 }
 
 function resetUserLimit(apiKey) {
@@ -507,5 +554,3 @@ function checkPendingBills() {
         if(badge) badge.style.display = snap.exists() ? "inline-block" : "none";
     });
 }
-
-var mainMessage = "Hello from the old script!";
