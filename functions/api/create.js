@@ -47,14 +47,23 @@ export async function onRequest(context) {
       // 4. Save to Database
       const saveUrl = `${env.FIREBASE_DB_URL}/links/${slug}.json?auth=${env.FIREBASE_DB_SECRET}`;
       
+      // NEW: Extract extra fields from request body
+      const payload = { 
+          url: body.url,
+          createdAt: Date.now(), 
+          userId: keyData.uid,
+          source: "api"
+      };
+
+      // Add Password if provided
+      if (body.password) payload.password = body.password;
+
+      // Add Expiry if provided (Expects timestamp in milliseconds)
+      if (body.expiresAt) payload.expiresAt = body.expiresAt;
+
       await fetch(saveUrl, {
         method: 'PUT',
-        body: JSON.stringify({ 
-            url: body.url,
-            createdAt: Date.now(), 
-            userId: keyData.uid,
-            source: "api"
-        })
+        body: JSON.stringify(payload)
       });
 
       // 5. Increment Usage (Optimistic)
