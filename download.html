@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Download Jachu App | Desktop & Mobile</title>
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/file/styles.css" />
+
+  <style>
+    /* Page-Specific Professional Styles */
+    body {
+      padding-top: 80px; /* Make space for header */
+      display: block; /* Override flex centering for this long page */
+      overflow-y: auto;
+    }
+
+    .hero-section {
+      text-align: center;
+      padding: 40px 20px;
+      max-width: 800px;
+      margin: 0 auto;
+    }
+
+    .hero-title {
+      font-size: 3rem;
+      font-weight: 800;
+      margin-bottom: 10px;
+      background: linear-gradient(to right, #fff, #818cf8);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .hero-subtitle {
+      font-size: 1.1rem;
+      color: var(--text-muted);
+      margin-bottom: 40px;
+      line-height: 1.6;
+    }
+
+    /* Grid Layout for Download Cards */
+    .download-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 30px;
+      max-width: 1000px;
+      margin: 0 auto 60px auto;
+      padding: 0 20px;
+    }
+
+    .download-card {
+      background: rgba(15, 23, 42, 0.6); /* Your card-bg */
+      backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 24px;
+      padding: 40px;
+      text-align: center;
+      transition: transform 0.3s ease, border-color 0.3s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .download-card:hover {
+      transform: translateY(-5px);
+      border-color: var(--primary-accent);
+      box-shadow: 0 20px 40px -10px rgba(99, 102, 241, 0.2);
+    }
+
+    .os-icon {
+      font-size: 3rem;
+      margin-bottom: 20px;
+      display: inline-block;
+    }
+
+    .version-tag {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      background: rgba(255,255,255,0.1);
+      padding: 5px 10px;
+      border-radius: 20px;
+      font-size: 0.75rem;
+      color: #94a3b8;
+    }
+
+    /* Features Section */
+    .features-container {
+      max-width: 800px;
+      margin: 0 auto 60px auto;
+      padding: 0 20px;
+    }
+    
+    .feature-row {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      margin-bottom: 30px;
+      background: rgba(255,255,255,0.03);
+      padding: 20px;
+      border-radius: 16px;
+    }
+
+    .feature-icon {
+      background: rgba(99, 102, 241, 0.2);
+      color: #818cf8;
+      width: 50px;
+      height: 50px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+      flex-shrink: 0;
+    }
+
+    @media (max-width: 768px) {
+      .hero-title { font-size: 2rem; }
+      .download-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+  <div id="authButtons" style="position: fixed; top: 20px; right: 20px; z-index: 100;">
+    <a href="/index.html" class="button" style="background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.1);">← Back to Home</a>
+  </div>
+
+  <div class="hero-section">
+    <div style="font-size: 4rem; margin-bottom: 10px;">🚀</div>
+    <h1 class="hero-title">Experience Jachu Native</h1>
+    <p class="hero-subtitle">
+      Get the full power of Jachu URL Shortener directly on your desktop and mobile device. <br>
+      Faster access, no browser clutter, and seamless link management.
+    </p>
+  </div>
+
+  <div class="download-grid">
+    
+    <div class="download-card">
+      <div class="version-tag">v1.0.0</div>
+      <div class="os-icon">💻</div>
+      <h2 style="margin: 0 0 10px 0; color: white;">Windows Desktop</h2>
+      <p style="color: #94a3b8; margin-bottom: 25px;">Compatible with Windows 10 & 11</p>
+      
+      <ul style="text-align: left; color: #cbd5e1; margin-bottom: 30px; padding-left: 20px; line-height: 1.6;">
+        <li>⚡ Instant Launch</li>
+        <li>🔔 Desktop Notifications</li>
+        <li>🛡️ Secure Nativefier Engine</li>
+      </ul>
+
+      <a href="downloads/Jachusetup.exe" download class="button" style="width: 100%; text-decoration: none;">
+        Download .EXE (64-bit)
+      </a>
+      <p style="font-size: 0.8rem; color: #64748b; margin-top: 15px;">Size: ~65 MB</p>
+    </div>
+
+    <div class="download-card">
+      <div class="version-tag">v1.2.0</div>
+      <div class="os-icon">🤖</div>
+      <h2 style="margin: 0 0 10px 0; color: white;">Android App</h2>
+      <p style="color: #94a3b8; margin-bottom: 25px;">Works on Android 8.0+</p>
+
+      <ul style="text-align: left; color: #cbd5e1; margin-bottom: 30px; padding-left: 20px; line-height: 1.6;">
+        <li>📱 Mobile Optimized UI</li>
+        <li>👆 One-Tap Shortening</li>
+        <li>🌙 Dark Mode Standard</li>
+      </ul>
+
+      <a href="/downloads/jachu.apk" download class="button" style="width: 100%; text-decoration: none; background: #22c55e;">
+        Download .APK
+      </a>
+      <p style="font-size: 0.8rem; color: #64748b; margin-top: 15px;">Size: ~15 MB</p>
+    </div>
+
+  </div>
+
+  <div class="features-container">
+    <h3 style="color: white; text-align: center; margin-bottom: 30px;">Why use the Native App?</h3>
+    
+    <div class="feature-row">
+      <div class="feature-icon">⚡</div>
+      <div>
+        <strong style="color: white; display: block; margin-bottom: 5px;">Blazing Fast Performance</strong>
+        <span style="color: #94a3b8; font-size: 0.95rem;">Apps run independently of your browser tabs, saving memory and loading instantly.</span>
+      </div>
+    </div>
+
+    <div class="feature-row">
+      <div class="feature-icon">🔒</div>
+      <div>
+        <strong style="color: white; display: block; margin-bottom: 5px;">Enterprise Security</strong>
+        <span style="color: #94a3b8; font-size: 0.95rem;">Built on the same secure infrastructure as our web platform. Your data is encrypted.</span>
+      </div>
+    </div>
+
+    <div class="feature-row">
+      <div class="feature-icon">🚫</div>
+      <div>
+        <strong style="color: white; display: block; margin-bottom: 5px;">Zero Ads & Distractions</strong>
+        <span style="color: #94a3b8; font-size: 0.95rem;">The app provides a clean, focused environment for managing your links efficiently.</span>
+      </div>
+    </div>
+  </div>
+
+  <div style="text-align: center; margin-bottom: 40px; color: #475569; font-size: 0.85rem;">
+    &copy; 2025 Jachu.xyz. All rights reserved.
+  </div>
+
+</body>
+</html>

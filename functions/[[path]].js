@@ -5,7 +5,7 @@ export async function onRequest(context) {
 
   // 1. PASS-THROUGH (Files, API, Homepage, and Legal)
   // We let Cloudflare handle specific paths naturally
-  if (path.includes('.') || path.startsWith('/api/') || path.startsWith('/file/') || path === '/' || path === '/legal') {
+  if (path.includes('.') || path.startsWith('/api/') || path.startsWith('/file/') || path === '/' || path === '/legal' || path === '/download') {
     return env.ASSETS.fetch(request);
   }
 
