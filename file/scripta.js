@@ -532,21 +532,33 @@ function approvePlan(reqId, userId, packLimit) {
       const amountToAdd = parseInt(packLimit) || 0;
       const newTotal = currentLimit + amountToAdd;
 
-      keyRef.update({ limit: newTotal }).then(() => {
-        db.ref(`payment_requests/${reqId}`).remove();
-        showToast(`Success! Limit upgraded: ${currentLimit} ➝ ${newTotal}`, "success");
-        loadBilling();
-      });
+      keyRef.update({ limit: newTotal })
+  .then(() => {
+    // 1. Wait for the removal to actually finish
+    return db.ref(`payment_requests/${reqId}`).remove(); 
+  })
+  .then(() => {
+    // 2. ONLY THEN show the toast and reload the table
+    showToast(`Success! Limit upgraded: ${currentLimit} ➝ ${newTotal}`, "success");
+    loadBilling(); 
+  })
+  .catch(err => showToast("Error: " + err.message, "error"));
     });
   });
 }
 
 function rejectPlan(reqId) {
   if(confirm("Reject this request?")) {
-    db.ref(`payment_requests/${reqId}`).remove();
-    loadBilling();
+    // Wait for the database to confirm deletion
+    db.ref(`payment_requests/${reqId}`).remove()
+      .then(() => {
+        showToast("Request rejected", "neutral");
+        loadBilling(); // Now the list will be correct
+      })
+      .catch(err => showToast("Error: " + err.message, "error"));
   }
 }
+
 
 function checkPendingBills() {
     db.ref("payment_requests").on("value", snap => {
