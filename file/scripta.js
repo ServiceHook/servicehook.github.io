@@ -1,21 +1,34 @@
-// VERSION: ADMIN_EMAIL_FIX_V2
-// Please verify this line appears at the top of your file in the Sources tab.
+// VERSION: SECURE_ENV_LOAD
+let db;
+let ADMIN_EMAIL = ""; // Fetched dynamically
 
-const firebaseConfig = {
-  apiKey: "AIzaSyBKA3bxy1caa0QiGrn6AihtxufiO7xxTnI",
-  authDomain: "futrshortener-7acf0.firebaseapp.com",
-  databaseURL: "https://futrshortener-7acf0-default-rtdb.firebaseio.com",
-  projectId: "futrshortener-7acf0",
-  storageBucket: "futrshortener-7acf0.appspot.com",
-  messagingSenderId: "863839648409",
-  appId: "1:863839648409:web:d20ae154fe1c9dc1b19608"
-};
+// --- INITIALIZATION ---
+async function initAdminApp() {
+  try {
+    const response = await fetch('/api/get_config');
+    const config = await response.json();
+    
+    ADMIN_EMAIL = config.adminEmail; 
+    firebase.initializeApp(config.firebase);
+    db = firebase.database();
 
-firebase.initializeApp(firebaseConfig);
-const db = firebase.database();
+    // Check Auth AFTER config is loaded
+    firebase.auth().onAuthStateChanged(user => {
+      if (user && user.email === ADMIN_EMAIL) {
+        initAdminPanel();
+      } else {
+        document.getElementById("loginSection").style.display = "flex";
+        document.getElementById("adminContent").style.display = "none";
+      }
+    });
 
-// --- CONFIGURATION ---
-const ADMIN_EMAIL = "ztenkammu@gmail.com"; 
+  } catch (err) {
+    console.error("Admin init failed", err);
+    showToast("Failed to load admin config", "error");
+  }
+}
+
+initAdminApp();
 
 // --- TOAST SYSTEM ---
 function showToast(message, type = 'neutral') {
@@ -51,7 +64,7 @@ function login() {
         showToast("Access Denied: Not an Admin", "error");
         firebase.auth().signOut();
       } else {
-        initAdminPanel();
+        // Observer in initAdminApp() will trigger initAdminPanel()
       }
     })
     .catch(err => {
@@ -63,15 +76,6 @@ function login() {
       btn.disabled = false;
     });
 }
-
-firebase.auth().onAuthStateChanged(user => {
-  if (user && user.email === ADMIN_EMAIL) {
-    initAdminPanel();
-  } else {
-    document.getElementById("loginSection").style.display = "flex";
-    document.getElementById("adminContent").style.display = "none";
-  }
-});
 
 function initAdminPanel() {
   document.getElementById("loginSection").style.display = "none";
@@ -294,20 +298,18 @@ function searchLinks() {
   });
 }
 
-// --- API USERS LOGIC (Fix: Cross-Reference Email from Links) ---
+// --- API USERS LOGIC ---
 async function loadApiUsers() {
   const tbody = document.querySelector("#apiUserTable tbody");
   tbody.innerHTML = "<tr><td colspan='4' style='text-align:center'>Fetching users & cross-referencing emails...</td></tr>";
 
   try {
-    // 1. Fetch API Keys
     const keysSnap = await db.ref("api_keys").once("value");
     if (!keysSnap.exists()) {
       tbody.innerHTML = "<tr><td colspan='4' style='text-align:center'>No API users found.</td></tr>";
       return;
     }
 
-    // 2. Fetch Links (To find missing emails)
     const linksSnap = await db.ref("links").once("value");
     const uidToEmailMap = {};
     if (linksSnap.exists()) {
@@ -324,10 +326,9 @@ async function loadApiUsers() {
         users.push({ key: child.key, ...child.val() });
     });
 
-    // Sort by Limit (Highest First)
     users.sort((a, b) => (b.limit || 0) - (a.limit || 0));
 
-    tbody.innerHTML = ""; // Clear loading message
+    tbody.innerHTML = ""; 
 
     users.forEach(u => {
       const isPaid = (u.limit || 50) > 50;
@@ -335,7 +336,6 @@ async function loadApiUsers() {
       
       if (isPaid) tr.style.background = "rgba(34, 197, 94, 0.1)";
 
-      // RESOLVE EMAIL: Use saved email OR fallback to link map
       const resolvedEmail = u.email || uidToEmailMap[u.uid] || null;
 
       const displayUid = u.uid 
@@ -344,7 +344,7 @@ async function loadApiUsers() {
           
       const displayEmail = resolvedEmail 
           ? `<div style="color:#f8fafc; font-size:0.9rem;">${resolvedEmail}</div>` 
-          : `<div style="color:#94a3b8; font-size:0.8rem; font-style:italic;">Email not linked (No links created yet)</div>`;
+          : `<div style="color:#94a3b8; font-size:0.8rem; font-style:italic;">Email not linked</div>`;
 
       tr.innerHTML = `
         <td>
@@ -373,14 +373,13 @@ async function loadApiUsers() {
   }
 }
 
-// Function to Edit Usage Limit
 function changeUsageLimit(apiKey, currentLimit) {
     const newLimit = prompt(`Enter new daily/monthly limit for this key:`, currentLimit);
     if (newLimit !== null && newLimit.trim() !== "" && !isNaN(newLimit)) {
         db.ref(`api_keys/${apiKey}`).update({ limit: parseInt(newLimit) })
           .then(() => {
               showToast("Limit updated successfully!", "success");
-              loadApiUsers(); // Refresh table to see change
+              loadApiUsers(); 
           })
           .catch(err => showToast("Error: " + err.message, "error"));
     }
@@ -534,11 +533,9 @@ function approvePlan(reqId, userId, packLimit) {
 
       keyRef.update({ limit: newTotal })
   .then(() => {
-    // 1. Wait for the removal to actually finish
     return db.ref(`payment_requests/${reqId}`).remove(); 
   })
   .then(() => {
-    // 2. ONLY THEN show the toast and reload the table
     showToast(`Success! Limit upgraded: ${currentLimit} ➝ ${newTotal}`, "success");
     loadBilling(); 
   })
@@ -549,16 +546,14 @@ function approvePlan(reqId, userId, packLimit) {
 
 function rejectPlan(reqId) {
   if(confirm("Reject this request?")) {
-    // Wait for the database to confirm deletion
     db.ref(`payment_requests/${reqId}`).remove()
       .then(() => {
         showToast("Request rejected", "neutral");
-        loadBilling(); // Now the list will be correct
+        loadBilling();
       })
       .catch(err => showToast("Error: " + err.message, "error"));
   }
 }
-
 
 function checkPendingBills() {
     db.ref("payment_requests").on("value", snap => {

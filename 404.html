@@ -4,9 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Jachu | Redirecting...</title>
-  
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
-  
   <style>
     body {
       margin: 0; height: 100vh;
@@ -71,21 +69,6 @@
   </div>
 
   <script>
-    const firebaseConfig = {
-      apiKey: "AIzaSyBKA3bxy1caa0QiGrn6AihtxufiO7xxTnI",
-      authDomain: "futrshortener-7acf0.firebaseapp.com",
-      databaseURL: "https://futrshortener-7acf0-default-rtdb.firebaseio.com",
-      projectId: "futrshortener-7acf0",
-      appId: "1:863839648409:web:d20ae154fe1c9dc1b19608"
-    };
-
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.database();
-    
-    // Get the alias from the URL
-    const alias = window.location.pathname.replace("/", "").trim();
-
-    // UI Elements
     const el = {
       load: document.getElementById('loadingCard'),
       pass: document.getElementById('passwordCard'),
@@ -104,44 +87,59 @@
       }
     }
 
-    // Main Logic
-    if (!alias || alias === "404.html" || alias === "404") {
-      showError("Page not found.");
-    } else {
-      db.ref("links/" + alias).once("value").then(snapshot => {
-        if (!snapshot.exists()) {
-          showError("Link not found or deleted.");
-          return;
-        }
+    async function initRedirect() {
+      try {
+        const response = await fetch('/api/get_config');
+        const config = await response.json();
+        
+        firebase.initializeApp(config.firebase);
+        const db = firebase.database();
+        
+        // Main Logic
+        const alias = window.location.pathname.replace("/", "").trim();
 
-        const data = snapshot.val();
-        const { url, password } = data;
-
-        if (!url) {
-          showError("Invalid link configuration.");
-          return;
-        }
-
-        // --- PASSWORD CHECK ---
-        if (password && password !== "null") {
-          // Show Password Input
-          el.load.classList.add('hidden');
-          el.pass.classList.remove('hidden');
-          
-          window.targetUrl = url;
-          window.correctPass = password;
+        if (!alias || alias === "404.html" || alias === "404") {
+          showError("Page not found.");
         } else {
-          // No Password? Redirect Immediately
-          performRedirect(url);
+          db.ref("links/" + alias).once("value").then(snapshot => {
+            if (!snapshot.exists()) {
+              showError("Link not found or deleted.");
+              return;
+            }
+
+            const data = snapshot.val();
+            const { url, password } = data;
+
+            if (!url) {
+              showError("Invalid link configuration.");
+              return;
+            }
+
+            // --- PASSWORD CHECK ---
+            if (password && password !== "null") {
+              el.load.classList.add('hidden');
+              el.pass.classList.remove('hidden');
+              
+              window.targetUrl = url;
+              window.correctPass = password;
+            } else {
+              performRedirect(url);
+            }
+          });
         }
-      });
+      } catch (e) {
+        console.error(e);
+        showError("System configuration error.");
+      }
     }
+
+    initRedirect();
 
     function checkPassword() {
       const inputVal = el.input.value.trim();
       if (inputVal === window.correctPass) {
         el.pass.classList.add('hidden');
-        el.load.classList.remove('hidden'); // Show spinner again
+        el.load.classList.remove('hidden'); 
         performRedirect(window.targetUrl);
       } else {
         el.errMsg.innerText = "❌ Incorrect password";

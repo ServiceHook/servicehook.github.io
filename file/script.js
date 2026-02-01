@@ -1,18 +1,74 @@
-const firebaseConfig = {
-  apiKey: "AIzaSyBKA3bxy1caa0QiGrn6AihtxufiO7xxTnI",
-  authDomain: "futrshortener-7acf0.firebaseapp.com",
-  databaseURL: "https://futrshortener-7acf0-default-rtdb.firebaseio.com",
-  projectId: "futrshortener-7acf0",
-  storageBucket: "futrshortener-7acf0.appspot.com",
-  messagingSenderId: "863839648409",
-  appId: "1:863839648409:web:d20ae154fe1c9dc1b19608",
-};
-
-firebase.initializeApp(firebaseConfig);
-const db = firebase.database();
-const auth = firebase.auth();
-
+let db;
+let auth;
 let currentUser = null;
+
+// --- INITIALIZATION ---
+async function initApp() {
+  try {
+    const response = await fetch('/api/get_config');
+    if (!response.ok) throw new Error("Config load failed");
+    const config = await response.json();
+
+    firebase.initializeApp(config.firebase);
+    db = firebase.database();
+    auth = firebase.auth();
+
+    // Start Auth Listener only after firebase is ready
+    auth.onAuthStateChanged(user => {
+      currentUser = user;
+      updateUI(user);
+    });
+
+  } catch (error) {
+    console.error("Critical Error:", error);
+    showToast("System Error: Could not load configuration.", "error");
+  }
+}
+
+initApp();
+
+// --- UI UPDATES ---
+function updateUI(user) {
+  const userDisplay = document.getElementById("userIdDisplay");
+  const mobileLogin = document.getElementById("mobileLoginBtn");
+  const mobileSignout = document.getElementById("mobileSignoutBtn");
+  
+  if (user) {
+    if(userDisplay) userDisplay.innerHTML = `👋 Hi, ${user.email.split('@')[0]}`;
+    
+    // Toggle Desktop Buttons
+    const loginBtn = document.querySelector('button[onclick="toggleAuthModal()"]');
+    const signoutBtn = document.querySelector('button[onclick="signOut()"]');
+    if(loginBtn) loginBtn.style.display = "none";
+    if(signoutBtn) signoutBtn.style.display = "inline-block";
+    
+    // Toggle Mobile Buttons
+    if(mobileLogin) mobileLogin.style.display = "none";
+    if(mobileSignout) mobileSignout.style.display = "block";
+
+    const emailEl = document.getElementById("userEmail");
+    if(emailEl) emailEl.textContent = user.email;
+    fetchUserLinks(user.uid);
+
+  } else {
+    if(userDisplay) userDisplay.innerHTML = "";
+    
+    // Toggle Desktop Buttons
+    const loginBtn = document.querySelector('button[onclick="toggleAuthModal()"]');
+    const signoutBtn = document.querySelector('button[onclick="signOut()"]');
+    if(loginBtn) loginBtn.style.display = "inline-block";
+    if(signoutBtn) signoutBtn.style.display = "none";
+    
+    // Toggle Mobile Buttons
+    if(mobileLogin) mobileLogin.style.display = "block";
+    if(mobileSignout) mobileSignout.style.display = "none";
+    
+    const linksList = document.getElementById("userLinksList");
+    if(linksList) linksList.innerHTML = "";
+    const emailEl = document.getElementById("userEmail");
+    if(emailEl) emailEl.textContent = "Please log in to see your links.";
+  }
+}
 
 // --- TOAST SYSTEM ---
 function showToast(message, type = 'neutral') {
@@ -40,59 +96,17 @@ function showToast(message, type = 'neutral') {
   }, 4000);
 }
 
-// --- AUTH STATE LISTENER ---
-auth.onAuthStateChanged(user => {
-  currentUser = user;
-  const userDisplay = document.getElementById("userIdDisplay");
-  
-  const mobileLogin = document.getElementById("mobileLoginBtn");
-  const mobileSignout = document.getElementById("mobileSignoutBtn");
-  
-  if (user) {
-    if(userDisplay) userDisplay.innerHTML = `👋 Hi, ${user.email.split('@')[0]}`;
-    const loginBtn = document.querySelector('button[onclick="toggleAuthModal()"]');
-    const signoutBtn = document.querySelector('button[onclick="signOut()"]');
-    
-    if(loginBtn) loginBtn.style.display = "none";
-    if(signoutBtn) signoutBtn.style.display = "inline-block";
-    
-    if(mobileLogin) mobileLogin.style.display = "none";
-    if(mobileSignout) mobileSignout.style.display = "block";
-
-    const emailEl = document.getElementById("userEmail");
-    if(emailEl) emailEl.textContent = user.email;
-    fetchUserLinks(user.uid);
-
-  } else {
-    if(userDisplay) userDisplay.innerHTML = "";
-    const loginBtn = document.querySelector('button[onclick="toggleAuthModal()"]');
-    const signoutBtn = document.querySelector('button[onclick="signOut()"]');
-
-    if(loginBtn) loginBtn.style.display = "inline-block";
-    if(signoutBtn) signoutBtn.style.display = "none";
-    
-    if(mobileLogin) mobileLogin.style.display = "block";
-    if(mobileSignout) mobileSignout.style.display = "none";
-    
-    const linksList = document.getElementById("userLinksList");
-    if(linksList) linksList.innerHTML = "";
-    const emailEl = document.getElementById("userEmail");
-    if(emailEl) emailEl.textContent = "Please log in to see your links.";
-  }
-});
-
 // --- AUTH ACTIONS ---
 function toggleAuthModal() {
   const modal = document.getElementById("authModal");
   modal.style.display = modal.style.display === "flex" ? "none" : "flex";
-  
-  // Hide captcha when closing/opening freshly
   document.getElementById("recaptcha-wrapper").style.display = "none";
   const resetBtn = document.getElementById("resetBtn");
   if(resetBtn) resetBtn.innerText = "Forgot Password?";
 }
 
 function signUp() {
+  if (!auth) return;
   const email = document.getElementById("email").value.trim();
   const password = document.getElementById("password").value;
   const btn = document.getElementById("signupBtn");
@@ -113,6 +127,7 @@ function signUp() {
 }
 
 function signIn() {
+  if (!auth) return;
   const email = document.getElementById("email").value.trim();
   const password = document.getElementById("password").value;
   const btn = document.getElementById("loginBtn");
@@ -123,7 +138,7 @@ function signIn() {
   
   auth.signInWithEmailAndPassword(email, password)
     .then((userCred) => {
-      // 🛑 BAN CHECK START
+      // BAN CHECK
       const userEmail = userCred.user.email;
       const encodedEmail = btoa(userEmail);
       
@@ -146,20 +161,20 @@ function signIn() {
 }
 
 function signOut() {
+  if (!auth) return;
   auth.signOut().then(() => { 
     showToast("Signed out successfully", "neutral");
     setTimeout(() => location.reload(), 1000);
   });
 }
 
-// --- UPDATED RESET PASSWORD (WITH RECAPTCHA) ---
 function resetPassword() {
+  if (!auth) return;
   const emailField = document.getElementById("email");
   const email = emailField.value.trim();
   const btn = document.getElementById("resetBtn");
   const captchaWrapper = document.getElementById("recaptcha-wrapper");
   
-  // 1. Check Email
   if (!email) {
     showToast("Please type your email in the box above first!", "error");
     emailField.focus();
@@ -168,7 +183,6 @@ function resetPassword() {
     return;
   }
 
-  // 2. Show Captcha if hidden
   if (captchaWrapper.style.display === "none") {
     captchaWrapper.style.display = "block";
     btn.innerText = "Verify & Send Link";
@@ -176,14 +190,12 @@ function resetPassword() {
     return;
   }
 
-  // 3. Verify Captcha
   const response = grecaptcha.getResponse();
   if (response.length === 0) {
     showToast("Please complete the captcha checkbox!", "error");
     return;
   }
 
-  // 4. Send Email
   btn.innerText = "Sending...";
   btn.disabled = true;
 
@@ -192,7 +204,7 @@ function resetPassword() {
       showToast("Reset link sent! Check your inbox.", "success");
       btn.innerText = "Email Sent ✅";
       captchaWrapper.style.display = "none";
-      grecaptcha.reset(); // Reset captcha for next time
+      grecaptcha.reset();
     })
     .catch(err => {
       showToast(cleanError(err.message), "error");
@@ -228,6 +240,7 @@ function getExpiryTimestamp(option, customDate) {
 }
 
 async function shorten() {
+  if (!db) return showToast("System initializing...", "neutral");
   const longUrl = document.getElementById("longUrl").value.trim();
   let alias = document.getElementById("customAlias").value.trim();
   const password = document.getElementById("linkPassword").value.trim();
@@ -239,7 +252,6 @@ async function shorten() {
   
   if (!longUrl) return showToast("Please paste a URL to shorten", "error");
   
-  // IP BAN CHECK FOR GUESTS
   if (!currentUser) {
     try {
       showLoader(true);
@@ -260,11 +272,9 @@ async function shorten() {
   }
 
   let formattedUrl = longUrl.startsWith("http") ? longUrl : "https://" + longUrl;
-
   if (!alias) alias = Math.random().toString(36).substring(2, 8);
 
   showLoader(true);
-  
   const ref = db.ref("links/" + alias);
 
   ref.once("value").then(snapshot => {
@@ -285,7 +295,6 @@ async function shorten() {
 
     ref.set(payload, err => {
       showLoader(false);
-      
       if (err) {
         showToast("Database error: " + err.message, "error");
       } else {
@@ -328,6 +337,7 @@ function copyToClipboard(text) {
 let linksListener = null;
 
 function fetchUserLinks(uid) {
+  if (!db) return;
   const userLinksRef = db.ref("links");
   const linksList = document.getElementById("userLinksList");
   if (linksListener) userLinksRef.off("value", linksListener);
