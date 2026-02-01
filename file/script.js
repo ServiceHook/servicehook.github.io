@@ -2,75 +2,237 @@ let db;
 let auth;
 let currentUser = null;
 
-// --- INITIALIZATION ---
 async function initApp() {
   try {
     const response = await fetch('/api/get_config');
-    if (!response.ok) throw new Error("Config load failed");
     const config = await response.json();
 
     firebase.initializeApp(config.firebase);
     db = firebase.database();
     auth = firebase.auth();
 
-    // Start Auth Listener only after firebase is ready
+    // Global Auth Listener
     auth.onAuthStateChanged(user => {
       currentUser = user;
       updateUI(user);
+      
+      // If we are on the dashboard page, load the grid
+      if (document.getElementById('myLinksGrid')) {
+          if (user) {
+              loadUserDashboard(user.uid);
+          } else {
+              // Redirect guest to home
+              window.location.href = "/";
+          }
+      }
     });
 
   } catch (error) {
-    console.error("Critical Error:", error);
+    console.error("Config Error:", error);
     showToast("System Error: Could not load configuration.", "error");
   }
 }
-
 initApp();
 
-// --- UI UPDATES ---
 function updateUI(user) {
+  // Update Header Elements
   const userDisplay = document.getElementById("userIdDisplay");
-  const mobileLogin = document.getElementById("mobileLoginBtn");
-  const mobileSignout = document.getElementById("mobileSignoutBtn");
+  if(userDisplay) userDisplay.innerHTML = user ? `👋 ${user.email.split('@')[0]}` : "";
   
-  if (user) {
-    if(userDisplay) userDisplay.innerHTML = `👋 Hi, ${user.email.split('@')[0]}`;
-    
-    // Toggle Desktop Buttons
-    const loginBtn = document.querySelector('button[onclick="toggleAuthModal()"]');
-    const signoutBtn = document.querySelector('button[onclick="signOut()"]');
-    if(loginBtn) loginBtn.style.display = "none";
-    if(signoutBtn) signoutBtn.style.display = "inline-block";
-    
-    // Toggle Mobile Buttons
-    if(mobileLogin) mobileLogin.style.display = "none";
-    if(mobileSignout) mobileSignout.style.display = "block";
+  // Elements on Index.html
+  const loginBtnTop = document.getElementById("loginBtnTop");
+  const signoutBtnTop = document.getElementById("signoutBtnTop");
+  const myLinksBtn = document.getElementById("myLinksBtn");
+  
+  if (loginBtnTop) loginBtnTop.style.display = user ? "none" : "inline-block";
+  if (signoutBtnTop) signoutBtnTop.style.display = user ? "inline-block" : "none";
+  if (myLinksBtn) myLinksBtn.style.display = user ? "inline-block" : "none";
 
-    const emailEl = document.getElementById("userEmail");
-    if(emailEl) emailEl.textContent = user.email;
-    fetchUserLinks(user.uid);
+  // Elements in Sidebar
+  const mobLogin = document.getElementById("mobileLoginBtn");
+  const mobSignout = document.getElementById("mobileSignoutBtn");
+  const mobDisplay = document.getElementById("mobileUserDisplay");
+  
+  if(mobLogin) mobLogin.style.display = user ? "none" : "block";
+  if(mobSignout) mobSignout.style.display = user ? "block" : "none";
+  if(mobDisplay) mobDisplay.innerText = user ? user.email : "";
 
-  } else {
-    if(userDisplay) userDisplay.innerHTML = "";
+  // Elements on Dashboard
+  const dashEmail = document.getElementById("userEmailDisplay");
+  if(dashEmail && user) dashEmail.innerText = user.email;
+}
+
+// --- DASHBOARD LOGIC (MY LINKS PAGE) ---
+function loadUserDashboard(uid) {
+  const grid = document.getElementById("myLinksGrid");
+  const loader = document.getElementById("dashboardLoader");
+  if(!grid) return;
+
+  grid.innerHTML = ""; 
+  
+  db.ref("links").orderByChild("userId").equalTo(uid).once("value").then(snapshot => {
+    if(loader) loader.style.display = "none";
     
-    // Toggle Desktop Buttons
-    const loginBtn = document.querySelector('button[onclick="toggleAuthModal()"]');
-    const signoutBtn = document.querySelector('button[onclick="signOut()"]');
-    if(loginBtn) loginBtn.style.display = "inline-block";
-    if(signoutBtn) signoutBtn.style.display = "none";
+    if (!snapshot.exists()) {
+      grid.innerHTML = `<div style="grid-column: 1/-1; text-align:center; padding: 40px; color: var(--text-muted);">
+        <h3>No links found 🤷‍♂️</h3>
+        <p>Go back to home to create your first short link!</p>
+      </div>`;
+      return;
+    }
+
+    snapshot.forEach(child => {
+      const alias = child.key;
+      const data = child.val();
+      
+      // Fetch click count for this link
+      db.ref("clicks/" + alias).once("value").then(clickSnap => {
+          const clickCount = clickSnap.exists() ? clickSnap.numChildren() : 0;
+          renderLinkCard(alias, data, clickCount, grid);
+      });
+    });
+  });
+}
+
+function renderLinkCard(alias, data, clicks, container) {
+  const card = document.createElement("div");
+  card.className = "link-card";
+  
+  const isLocked = !!data.password;
+  const isExpired = data.expiresAt && data.expiresAt < Date.now();
+  
+  // Format Date
+  const expiryDate = data.expiresAt ? new Date(data.expiresAt).toLocaleDateString() : "Never";
+
+  card.innerHTML = `
+    <div class="card-header">
+      <span class="alias-badge">/${alias}</span>
+      <span class="click-badge">📊 ${clicks} clicks</span>
+    </div>
     
-    // Toggle Mobile Buttons
-    if(mobileLogin) mobileLogin.style.display = "block";
-    if(mobileSignout) mobileSignout.style.display = "none";
+    <div class="long-url" title="${data.url}">${data.url}</div>
     
-    const linksList = document.getElementById("userLinksList");
-    if(linksList) linksList.innerHTML = "";
-    const emailEl = document.getElementById("userEmail");
-    if(emailEl) emailEl.textContent = "Please log in to see your links.";
+    <div class="meta-tags">
+        ${isLocked ? '<span class="tag locked">🔒 Password</span>' : ''}
+        ${isExpired ? '<span class="tag expired">⚠️ Expired</span>' : '<span class="tag">Active</span>'}
+        <span class="tag">📅 Exp: ${expiryDate}</span>
+    </div>
+
+    <div class="card-actions">
+        <button onclick="openEditModal('${alias}')" class="button" style="padding: 8px; font-size: 0.9rem;">✏️ Edit</button>
+        <button onclick="deleteUserLink('${alias}')" class="button" style="padding: 8px; font-size: 0.9rem; background: rgba(239, 68, 68, 0.2); color: #fca5a5;">🗑️ Delete</button>
+    </div>
+    
+    <div style="margin-top:10px; display:flex; gap:10px;">
+       <button onclick="copyToClipboard('${location.origin}/${alias}')" class="button" style="background:transparent; border:1px solid var(--border-color); color:var(--text-muted); padding:5px;">📋 Copy Link</button>
+       <a href="/${alias}" target="_blank" class="button" style="background:transparent; border:1px solid var(--border-color); color:var(--text-muted); padding:5px; text-decoration:none; text-align:center;">↗️ Visit</a>
+    </div>
+  `;
+  
+  // Prepend to show newest first if we were sorting, but simple append works
+  container.prepend(card); 
+}
+
+// --- EDIT MODAL LOGIC ---
+function openEditModal(alias) {
+  const modal = document.getElementById("editModal");
+  document.getElementById("editOriginalAlias").value = alias;
+  document.getElementById("editAlias").value = alias;
+  
+  // Fetch latest data to fill form
+  db.ref("links/" + alias).once("value").then(snap => {
+     const data = snap.val();
+     document.getElementById("editUrl").value = data.url;
+     document.getElementById("editPassword").value = data.password || "";
+     
+     // Handle Date for Input (YYYY-MM-DDTHH:MM)
+     if(data.expiresAt) {
+         const date = new Date(data.expiresAt);
+         const str = date.toISOString().slice(0, 16); // format for input type=datetime-local
+         document.getElementById("editExpiry").value = str;
+     } else {
+         document.getElementById("editExpiry").value = "";
+     }
+     
+     modal.style.display = "flex";
+  });
+}
+
+function closeEditModal() {
+  document.getElementById("editModal").style.display = "none";
+}
+
+function clearExpiry() {
+    document.getElementById("editExpiry").value = "";
+}
+
+async function saveLinkChanges() {
+    const oldAlias = document.getElementById("editOriginalAlias").value;
+    const newAlias = document.getElementById("editAlias").value.trim();
+    const newPassword = document.getElementById("editPassword").value.trim();
+    const expiryInput = document.getElementById("editExpiry").value;
+    
+    if(!newAlias) return showToast("Alias cannot be empty", "error");
+
+    const newExpiry = expiryInput ? new Date(expiryInput).getTime() : null;
+    
+    const oldRef = db.ref("links/" + oldAlias);
+    const newRef = db.ref("links/" + newAlias);
+    
+    try {
+        const snap = await oldRef.once("value");
+        const data = snap.val();
+        
+        // Update Data Object
+        data.password = newPassword || null; // Remove if empty
+        data.expiresAt = newExpiry; 
+        
+        if (oldAlias === newAlias) {
+            // Simple Update
+            await oldRef.update(data);
+            showToast("Link updated successfully!", "success");
+        } else {
+            // Alias Change: Check if new alias is taken
+            const exists = await newRef.once("value");
+            if(exists.exists()) return showToast("Alias already taken!", "error");
+            
+            // Move Data
+            await newRef.set(data);
+            await oldRef.remove();
+            
+            // Move Clicks Data too
+            const clicksSnap = await db.ref("clicks/" + oldAlias).once("value");
+            if(clicksSnap.exists()) {
+                await db.ref("clicks/" + newAlias).set(clicksSnap.val());
+                await db.ref("clicks/" + oldAlias).remove();
+            }
+            
+            showToast("Link moved to new alias!", "success");
+        }
+        
+        closeEditModal();
+        loadUserDashboard(currentUser.uid); // Refresh Grid
+        
+    } catch (e) {
+        console.error(e);
+        showToast("Error updating link: " + e.message, "error");
+    }
+}
+
+function deleteUserLink(alias) {
+  if (confirm("Permanently delete this link? Stats will be lost.")) {
+    db.ref(`links/${alias}`).remove()
+      .then(() => {
+          db.ref(`clicks/${alias}`).remove(); // Cleanup stats
+          showToast("Link deleted", "success");
+          loadUserDashboard(currentUser.uid);
+      })
+      .catch(err => showToast(err.message, "error"));
   }
 }
 
-// --- TOAST SYSTEM ---
+
+// --- GENERAL UTILS ---
 function showToast(message, type = 'neutral') {
   let container = document.querySelector('.toast-container');
   if (!container) {
@@ -82,19 +244,26 @@ function showToast(message, type = 'neutral') {
   const icons = { success: '✅', error: '❌', neutral: 'ℹ️' };
   const toast = document.createElement('div');
   toast.className = `toast ${type}`;
-  toast.innerHTML = `
-    <span class="toast-icon">${icons[type] || icons.neutral}</span>
-    <span class="toast-msg">${message}</span>
-  `;
-
+  toast.innerHTML = `<span class="toast-icon">${icons[type] || icons.neutral}</span><span class="toast-msg">${message}</span>`;
   container.appendChild(toast);
   requestAnimationFrame(() => toast.classList.add('show'));
-
   setTimeout(() => {
     toast.classList.remove('show');
     setTimeout(() => toast.remove(), 400);
   }, 4000);
 }
+
+function copyToClipboard(text) {
+  navigator.clipboard.writeText(text).then(() => showToast("Copied to clipboard!", "success"));
+}
+
+function showLoader(show) {
+  const loader = document.getElementById("loader");
+  if(loader) loader.style.display = show ? "flex" : "none";
+}
+
+
+
 
 // --- AUTH ACTIONS ---
 function toggleAuthModal() {

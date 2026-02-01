@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My Links Dashboard | Jachu</title>
+  <link rel="stylesheet" href="/file/styles.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    /* Dashboard Specific Styles */
+    .dash-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
+    .link-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px; }
+    
+    .link-card {
+      background: var(--card-bg); border: 1px solid var(--border-color);
+      border-radius: 16px; padding: 20px; position: relative;
+      transition: 0.2s; backdrop-filter: blur(10px);
+    }
+    .link-card:hover { border-color: var(--primary-accent); transform: translateY(-3px); }
+    
+    .card-header { display: flex; justify-content: space-between; margin-bottom: 10px; }
+    .alias-badge { 
+      font-family: monospace; font-size: 1.1rem; color: var(--primary-accent); 
+      background: rgba(99, 102, 241, 0.1); padding: 4px 8px; border-radius: 6px; 
+    }
+    .click-badge { font-size: 0.9rem; color: var(--success); display: flex; align-items: center; gap: 5px; }
+    
+    .long-url { 
+      font-size: 0.85rem; color: var(--text-muted); 
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 15px; 
+    }
+    
+    .meta-tags { display: flex; gap: 10px; margin-bottom: 15px; flex-wrap: wrap; }
+    .tag { font-size: 0.75rem; padding: 4px 8px; border-radius: 4px; border: 1px solid var(--border-color); color: var(--text-muted); }
+    .tag.locked { border-color: #f59e0b; color: #f59e0b; }
+    .tag.expired { border-color: #ef4444; color: #ef4444; }
+    
+    .card-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    
+    /* Edit Modal Specifics */
+    .edit-modal-content { max-width: 500px; width: 95%; background: #0f172a; border: 1px solid var(--border-color); border-radius: 20px; padding: 30px; position: relative; }
+    .close-modal { position: absolute; top: 15px; right: 20px; background: none; border: none; color: white; font-size: 1.5rem; cursor: pointer; }
+    
+    .form-group { margin-bottom: 15px; text-align: left; }
+    .form-label { display: block; color: var(--text-muted); font-size: 0.9rem; margin-bottom: 5px; }
+  </style>
+</head>
+<body>
+
+  <nav style="padding: 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); background: rgba(2, 6, 23, 0.8);">
+    <a href="/" style="text-decoration: none; font-weight: 700; font-size: 1.5rem; color: white;">Jachu.</a>
+    <div>
+        <span id="userEmailDisplay" style="color: var(--text-muted); font-size: 0.9rem; margin-right: 15px;"></span>
+        <button onclick="signOut()" class="button" style="width: auto; padding: 8px 16px; background: rgba(255,255,255,0.1);">Sign Out</button>
+    </div>
+  </nav>
+
+  <div class="main-container" style="max-width: 1200px;">
+    <div class="dash-header">
+      <h1 class="title" style="margin: 0; text-align: left;">My Links</h1>
+      <a href="/" class="button" style="width: auto;">+ Create New</a>
+    </div>
+
+    <div id="dashboardLoader" style="text-align: center; color: var(--text-muted);">Loading your links...</div>
+    <div id="myLinksGrid" class="link-grid"></div>
+  </div>
+
+  <div id="editModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.8); backdrop-filter: blur(5px); z-index:9999; justify-content:center; align-items:center;">
+    <div class="edit-modal-content">
+        <button class="close-modal" onclick="closeEditModal()">×</button>
+        <h2 style="margin-top: 0;">Edit Link</h2>
+        
+        <input type="hidden" id="editOriginalAlias">
+        
+        <div class="form-group">
+            <label class="form-label">Alias (Slug)</label>
+            <input type="text" id="editAlias" class="input">
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">Destination URL</label>
+            <input type="text" id="editUrl" class="input" readonly style="opacity: 0.6; cursor: not-allowed;">
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">Password (Leave empty to remove)</label>
+            <input type="text" id="editPassword" class="input" placeholder="No Password Set">
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">Expiration Date</label>
+            <input type="datetime-local" id="editExpiry" class="input">
+            <button onclick="clearExpiry()" style="background:none; border:none; color:var(--danger); font-size:0.8rem; cursor:pointer; margin-top:5px;">Clear Expiry</button>
+        </div>
+
+        <button onclick="saveLinkChanges()" class="button">Save Changes</button>
+    </div>
+  </div>
+
+  <footer style="margin-top: 50px; border-top: 1px solid var(--border-color); padding: 30px; text-align: center; color: var(--text-muted);">
+    <div style="margin-bottom: 10px;">
+        <a href="/legal.html" style="color: var(--text-muted); text-decoration: none; margin: 0 10px;">Privacy Policy</a>
+        <a href="/legal.html" style="color: var(--text-muted); text-decoration: none; margin: 0 10px;">Terms of Service</a>
+        <a href="/api/dashboard.html" style="color: var(--text-muted); text-decoration: none; margin: 0 10px;">Developers</a>
+    </div>
+    <div>&copy; 2026 Jachu URL Shortener. All rights reserved.</div>
+  </footer>
+
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+  <script src="/file/script.js"></script>
+  <script>
+      // Initialize Dashboard Logic specifically
+      document.addEventListener("DOMContentLoaded", () => {
+         // Wait for auth to be ready in script.js
+         setTimeout(() => {
+             if(typeof initUserDashboard === 'function') initUserDashboard();
+         }, 1000);
+      });
+  </script>
+</body>
+</html>

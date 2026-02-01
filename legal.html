@@ -3,160 +3,467 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Legal & Policies | Jachu</title>
+  <title>Legal Center & Documentation | Jachu</title>
   
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/file/styles.css" />
   
   <style>
-    /* Legal Page Specific Overrides */
-    body { padding-top: 100px; align-items: flex-start; }
-    .legal-container { width: 100%; max-width: 800px; padding: 20px; margin: 0 auto; }
-    
-    .legal-nav {
-      display: flex; gap: 15px; margin-bottom: 30px; flex-wrap: wrap; justify-content: center;
+    /* --- LEGAL CENTER SPECIFIC STYLES --- */
+    body {
+      padding-top: 0;
+      display: block; /* Override flex centering from main styles */
+      min-height: 100vh;
     }
-    .legal-nav a {
-      color: var(--text-muted); text-decoration: none; font-size: 0.9rem; padding: 8px 15px;
-      border-radius: 20px; background: rgba(255,255,255,0.05); transition: 0.2s;
+
+    /* Layout Grid */
+    .doc-layout {
+      display: grid;
+      grid-template-columns: 280px 1fr;
+      min-height: 100vh;
+      max-width: 1400px;
+      margin: 0 auto;
     }
-    .legal-nav a:hover, .legal-nav a.active {
-      background: var(--primary-accent); color: white;
+
+    /* Sidebar Navigation */
+    .doc-sidebar {
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      background: rgba(2, 6, 23, 0.95);
+      border-right: 1px solid var(--border-color);
+      overflow-y: auto;
+      padding: 30px 20px;
+      display: flex;
+      flex-direction: column;
     }
-    
-    .section-card {
-      background: var(--card-bg); backdrop-filter: blur(20px);
-      border: 1px solid var(--border-color); border-radius: 24px;
-      padding: 40px; margin-bottom: 30px;
+
+    .brand-area {
+      margin-bottom: 30px;
+      padding-bottom: 20px;
+      border-bottom: 1px solid var(--border-color);
     }
-    
-    h2 { color: white; border-bottom: 1px solid var(--border-color); padding-bottom: 15px; margin-top: 0; }
-    h3 { color: var(--primary-accent); margin-top: 25px; font-size: 1.1rem; }
-    p { line-height: 1.7; color: var(--text-muted); margin-bottom: 15px; }
-    ul { color: var(--text-muted); line-height: 1.7; padding-left: 20px; }
-    li { margin-bottom: 8px; }
+
+    .brand-logo {
+      font-size: 1.5rem;
+      font-weight: 800;
+      color: white;
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    /* Search Box */
+    .search-wrapper {
+      position: relative;
+      margin-bottom: 30px;
+    }
+    .search-input {
+      width: 100%;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--border-color);
+      padding: 12px 15px 12px 35px;
+      border-radius: 8px;
+      color: white;
+      font-family: 'Inter', sans-serif;
+      transition: 0.2s;
+    }
+    .search-input:focus {
+      border-color: var(--primary-accent);
+      background: rgba(255, 255, 255, 0.1);
+      box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+    }
+    .search-icon {
+      position: absolute;
+      left: 10px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--text-muted);
+      pointer-events: none;
+    }
+
+    /* Navigation Links */
+    .nav-group { margin-bottom: 25px; }
+    .nav-label {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--text-muted);
+      font-weight: 700;
+      margin-bottom: 10px;
+      padding-left: 10px;
+    }
+    .nav-link {
+      display: block;
+      padding: 8px 10px;
+      color: #cbd5e1;
+      text-decoration: none;
+      font-size: 0.9rem;
+      border-radius: 6px;
+      transition: 0.2s;
+      border-left: 2px solid transparent;
+    }
+    .nav-link:hover {
+      background: rgba(255, 255, 255, 0.05);
+      color: white;
+    }
+    .nav-link.active {
+      background: rgba(99, 102, 241, 0.1);
+      color: var(--primary-accent);
+      border-left-color: var(--primary-accent);
+    }
+
+    /* Main Content Area */
+    .doc-content {
+      padding: 60px 80px;
+    }
+
+    .doc-section {
+      margin-bottom: 80px;
+      scroll-margin-top: 100px; /* For sticky header clearance */
+      border-bottom: 1px solid var(--border-color);
+      padding-bottom: 60px;
+    }
+    .doc-section:last-child { border-bottom: none; }
+
+    /* Typography Overrides */
+    h1 { font-size: 2.5rem; color: white; margin-bottom: 1rem; }
+    h2 { font-size: 1.8rem; color: white; margin-top: 0; margin-bottom: 1.5rem; display: flex; align-items: center; gap: 10px; }
+    h3 { font-size: 1.3rem; color: #e2e8f0; margin-top: 2rem; margin-bottom: 1rem; }
+    h4 { font-size: 1.1rem; color: var(--primary-accent); margin-top: 1.5rem; }
+    p { line-height: 1.8; color: #94a3b8; margin-bottom: 1.5rem; font-size: 1rem; }
+    ul { padding-left: 20px; color: #94a3b8; line-height: 1.8; margin-bottom: 1.5rem; }
+    li { margin-bottom: 0.5rem; }
     strong { color: #f8fafc; }
+    code { background: rgba(0,0,0,0.3); padding: 2px 6px; border-radius: 4px; font-family: monospace; color: #f472b6; border: 1px solid var(--border-color); }
+    pre { background: #0f172a; padding: 20px; border-radius: 12px; overflow-x: auto; border: 1px solid var(--border-color); margin: 20px 0; }
+
+    /* Alert Boxes */
+    .alert-box {
+      padding: 20px;
+      border-radius: 12px;
+      margin: 20px 0;
+      border-left: 4px solid;
+    }
+    .alert-info { background: rgba(59, 130, 246, 0.1); border-color: #3b82f6; }
+    .alert-danger { background: rgba(239, 68, 68, 0.1); border-color: #ef4444; }
+    .alert-warning { background: rgba(234, 179, 8, 0.1); border-color: #eab308; }
+
+    /* Mobile Responsive */
+    @media (max-width: 900px) {
+      .doc-layout { grid-template-columns: 1fr; }
+      .doc-sidebar { 
+        height: auto; position: relative; border-right: none; border-bottom: 1px solid var(--border-color);
+        padding: 20px;
+      }
+      .doc-content { padding: 40px 20px; }
+      .nav-group { display: none; } /* Hide detailed nav on mobile initially */
+      .nav-group.mobile-visible { display: block; }
+      .mobile-toggle { display: block; margin-bottom: 15px; width: 100%; }
+    }
+    @media (min-width: 901px) {
+      .mobile-toggle { display: none; }
+    }
   </style>
 </head>
 <body>
 
-  <div id="authButtons">
-    <a href="/index.html" class="button" style="background: transparent; border: none; box-shadow: none;">← Back to Home</a>
-  </div>
-
-  <div class="legal-container">
-    <h1 class="title" style="margin-bottom: 10px;">Legal Center</h1>
-    <p style="text-align: center; color: var(--text-muted); margin-bottom: 40px;">Transparency is our core value.</p>
-
-    <div class="legal-nav">
-      <a href="#about">About</a>
-      <a href="#terms">Terms</a>
-      <a href="#aup">Acceptable Use</a>
-      <a href="#privacy">Privacy</a>
-      <a href="#refund">Refunds</a>
-      <a href="#contact">Contact</a>
-    </div>
-
-    <div id="about" class="section-card">
-      <h2>🚀 About Jachu</h2>
-      <p>Jachu is a professional URL shortening infrastructure designed for developers, marketers, and creators. Built on the <strong>Cloudflare Edge Network</strong>, we ensure your links are fast, secure, and always online.</p>
-      <p>We are dedicated to providing a clutter-free, privacy-focused experience without intrusive tracking or ads.</p>
-    </div>
-
-    <div id="terms" class="section-card">
-      <h2>⚖️ Terms of Service</h2>
-      <p><strong>Effective Date:</strong> July 24, 2025</p>
-      
-      <h3>1. API Usage & Limits</h3>
-      <p>Jachu provides an Application Programming Interface ("API") for developer integration. By using our API, you agree to the following:</p>
-      <ul>
-        <li><strong>Rate Limiting:</strong> Usage is strictly limited to the quota assigned to your API Key (Free Tier: 50 requests/month; Paid Tiers: as purchased).</li>
-        <li><strong>Security:</strong> You are responsible for keeping your API Key secure. Jachu is not liable for usage incurred by compromised keys.</li>
-        <li><strong>Abuse:</strong> Creating multiple accounts to bypass rate limits will result in an immediate permanent ban.</li>
-      </ul>
-
-      <h3>2. Account Termination</h3>
-      <p>We reserve the right to suspend or terminate your access to Jachu at any time, without notice, for conduct that we believe violates these Terms or is harmful to other users of our service.</p>
-      
-      <h3>3. Service Availability</h3>
-      <p>While we utilize high-availability infrastructure (Cloudflare & Firebase), we do not guarantee 100% uptime. We also utilize third-party services (ApiFlash, QRServer) for specific features and are not responsible for their availability.</p>
-    </div>
-
-    <div id="aup" class="section-card">
-      <h2>🚨 Acceptable Use Policy</h2>
-      <p>To protect our users and reputation, we maintain a <strong>Zero Tolerance Policy</strong> against abuse. You may NOT use Jachu to shorten links to:</p>
-      <ul>
-        <li>Malware, ransomware, spyware, or browser lockers.</li>
-        <li>Phishing websites (fake login pages, banking scams).</li>
-        <li>Illegal content (piracy, CSAM, illicit drugs, violence).</li>
-        <li>Spam or unsolicited bulk messaging (SMS/Email).</li>
-      </ul>
-      <p><strong>Enforcement:</strong> Any link found violating this policy will be disabled immediately. We cooperate fully with law enforcement requests regarding illegal activities.</p>
-    </div>
-
-    <div id="privacy" class="section-card">
-      <h2>🔒 Privacy Policy</h2>
-      <p>Your privacy is paramount. Here is exactly what we track and why:</p>
-      
-      <h3>1. Information We Collect</h3>
-      <ul>
-        <li><strong>Personal Info:</strong> Your email address and unique User ID (UID) are stored when you sign up to manage your links.</li>
-        <li><strong>Link Data:</strong> The original URLs, custom aliases, and optional passwords you create.</li>
-        <li><strong>Analytics:</strong> We track anonymous click data (Country, City, Device Type) to provide statistics.</li>
-      </ul>
-      
-      <h3>2. Third-Party Processors</h3>
-      <p>We trust the following providers to power our infrastructure:</p>
-      <ul>
-        <li><strong>Google Firebase (USA):</strong> Hosting, Database, and Authentication.</li>
-        <li><strong>Cloudflare (USA):</strong> Edge network execution and security.</li>
-        <li><strong>ApiFlash & QRServer:</strong> Used solely for generating link previews and QR codes.</li>
-      </ul>
-    </div>
-
-    <div id="refund" class="section-card">
-      <h2>💸 Refund & Cancellation</h2>
-      
-      <h3>1. Payment Processing</h3>
-      <p>Jachu accepts payments via UPI. All plan upgrades are verified manually by our administration team. Please allow up to <strong>24 hours</strong> for your plan upgrade to reflect in your dashboard.</p>
-
-      <h3>2. Refund Eligibility</h3>
-      <ul>
-        <li><strong>Failed Upgrades:</strong> If a plan is not activated within 48 hours of payment verification, a full refund will be issued.</li>
-        <li><strong>24-Hour Window:</strong> You may request a refund within 24 hours of purchase if you have used less than 10% of your quota.</li>
-        <li><strong>Exceptions:</strong> No refunds are provided for accounts banned due to Terms of Service violations (e.g., phishing).</li>
-      </ul>
-    </div>
-
-    <div id="contact" class="section-card">
-      <h2>📞 Contact Us</h2>
-      <p>Have questions or need to report a violation? We're here to help.</p>
-      <p>
-        <strong>Email:</strong> <a href="mailto:mail@jachu.xyz" style="color:var(--primary-accent);">mail@jachu.xyz</a><br>
-        <strong>Support Hours:</strong> Mon–Sat, 10 AM – 6 PM IST
-      </p>
-      <p><strong>Address:</strong><br>Kanhangad, Kasaragod, Kerala - 671316, India</p>
-    </div>
-    
-    <div style="text-align: center; color: var(--border-color); margin-bottom: 50px;">
-      &copy; 2025 Muhammad Kamar Jahan. All rights reserved.
-    </div>
-
-  </div>
+<div class="doc-layout">
   
-  <script>
-    // Smooth scroll for legal nav
-    document.querySelectorAll('.legal-nav a').forEach(anchor => {
-      anchor.addEventListener('click', function (e) {
-        e.preventDefault();
-        document.querySelector(this.getAttribute('href')).scrollIntoView({
-          behavior: 'smooth'
-        });
-      });
-    });
-  </script>
+  <aside class="doc-sidebar">
+    <div class="brand-area">
+      <a href="/" class="brand-logo">
+        <span style="font-size: 1.8rem;">←</span> Jachu.
+      </a>
+      <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 5px;">Legal Center & Docs</div>
+    </div>
 
-  <script src='https://cdn.jotfor.ms/agent/embedjs/0197fa7374c97c9fade854e7f577b1bedcde/embed.js'></script>
+    <div class="search-wrapper">
+      <span class="search-icon">🔍</span>
+      <input type="text" id="searchInput" class="search-input" placeholder="Search legal docs..." onkeyup="filterDocs()">
+    </div>
+
+    <button class="button mobile-toggle" onclick="toggleMobileNav()">☰ Show Menu</button>
+
+    <div id="navContainer">
+      <div class="nav-group">
+        <div class="nav-label">General</div>
+        <a href="#about" class="nav-link active">About Jachu</a>
+        <a href="#contact" class="nav-link">Contact Information</a>
+      </div>
+
+      <div class="nav-group">
+        <div class="nav-label">Legal Agreements</div>
+        <a href="#terms" class="nav-link">Terms of Service</a>
+        <a href="#privacy" class="nav-link">Privacy Policy</a>
+        <a href="#aup" class="nav-link">Acceptable Use Policy</a>
+        <a href="#cookies" class="nav-link">Cookie Policy</a>
+      </div>
+
+      <div class="nav-group">
+        <div class="nav-label">Commercial</div>
+        <a href="#refund" class="nav-link">Refund & Cancellation</a>
+        <a href="#sla" class="nav-link">Service Level Agreement</a>
+      </div>
+
+      <div class="nav-group">
+        <div class="nav-label">Compliance</div>
+        <a href="#dmca" class="nav-link">DMCA & Copyright</a>
+        <a href="#law" class="nav-link">Law Enforcement</a>
+        <a href="#report" class="nav-link">Report Abuse</a>
+      </div>
+
+      <div class="nav-group">
+        <div class="nav-label">Developers</div>
+        <a href="#api-terms" class="nav-link">API Usage Policy</a>
+        <a href="/api/dashboard.html" class="nav-link" style="color: var(--primary-accent);">Visit Developer Hub ↗</a>
+      </div>
+    </div>
+  </aside>
+
+  <main class="doc-content">
+    
+    <section id="about" class="doc-section">
+      <h1>Legal Center</h1>
+      <p style="font-size: 1.2rem; color: #cbd5e1;">Comprehensive documentation regarding your rights, obligations, and our commitment to transparency.</p>
+      <div style="font-size: 0.9rem; color: var(--text-muted); margin-top: 20px;">Last Updated: February 1, 2026</div>
+
+      <h2>🚀 About Jachu</h2>
+      <p>Jachu is a high-performance URL shortening service built on modern edge infrastructure. Our mission is to provide developers, marketers, and everyday users with a fast, secure, and privacy-respecting tool to manage links.</p>
+      
+      <h3>Infrastructure</h3>
+      <p>We leverage industry-leading technologies to ensure speed and reliability:</p>
+      <ul>
+        <li><strong>Edge Network:</strong> Powered by Cloudflare Pages, our redirect logic runs on servers in 275+ cities globally, ensuring low-latency access from anywhere.</li>
+        <li><strong>Database:</strong> We utilize Google Firebase Realtime Database for instantaneous data synchronization and 99.9% availability.</li>
+        <li><strong>Security:</strong> All links are automatically provisioned with SSL/TLS encryption.</li>
+      </ul>
+    </section>
+
+    <section id="terms" class="doc-section">
+      <h2>⚖️ Terms of Service</h2>
+      
+      <h3>1. Acceptance of Terms</h3>
+      <p>By accessing or using Jachu (the "Service"), accessible from jachu.xyz, you agree to be bound by these Terms of Service. If you disagree with any part of these terms, you may not access the Service.</p>
+
+      <h3>2. Accounts & Registration</h3>
+      <p>To access certain features (e.g., analytics, link management), you must register an account. You agree that:</p>
+      <ul>
+        <li>You will provide accurate and complete information.</li>
+        <li>You are responsible for safeguarding your password.</li>
+        <li>You will notify us immediately of any unauthorized use of your account.</li>
+      </ul>
+
+      <h3>3. Use License</h3>
+      <p>Permission is granted to use Jachu for personal and commercial purposes, subject to the restrictions in our Acceptable Use Policy. This is the grant of a license, not a transfer of title.</p>
+
+      <h3>4. Limitations of Liability</h3>
+      <p>In no event shall Jachu, nor its administrators, be held liable for any damages (including, without limitation, damages for loss of data or profit, or due to business interruption) arising out of the use or inability to use the Service.</p>
+    </section>
+
+    <section id="privacy" class="doc-section">
+      <h2>🔒 Privacy Policy</h2>
+      <div class="alert-box alert-info">
+        <strong>Summary:</strong> We do not sell your data. We only collect what is necessary to provide the service.
+      </div>
+
+      <h3>1. Information We Collect</h3>
+      <h4>A. Account Data</h4>
+      <p>When you sign up, we collect your email address and generate a unique User ID (UID). This is used solely for authentication and account recovery.</p>
+      
+      <h4>B. Link Data</h4>
+      <p>We store the original URLs you submit, the custom aliases you create, and any optional passwords or expiry dates you configure.</p>
+
+      <h4>C. Analytics Data</h4>
+      <p>When a short link is clicked, we collect non-personally identifiable information to provide stats to the link creator:</p>
+      <ul>
+        <li><strong>IP Address:</strong> Used temporarily to determine rough geolocation (City/Country) and then discarded or hashed.</li>
+        <li><strong>User Agent:</strong> Used to determine device type (Mobile/Desktop) and Browser.</li>
+        <li><strong>Referrer:</strong> The website the user came from.</li>
+      </ul>
+
+      <h3>2. Third-Party Processors</h3>
+      <p>We share data with specific vendors strictly for infrastructure purposes:</p>
+      <ul>
+        <li><strong>Google Firebase (USA):</strong> Database hosting and Authentication services.</li>
+        <li><strong>Cloudflare (USA):</strong> DDoS protection, CDN, and Edge computing.</li>
+        <li><strong>ApiFlash & QRServer:</strong> External APIs used to generate link preview screenshots and QR codes.</li>
+      </ul>
+    </section>
+
+    <section id="aup" class="doc-section">
+      <h2>🚨 Acceptable Use Policy (AUP)</h2>
+      <p>We maintain a <strong>Zero Tolerance Policy</strong> for abuse. Violation of this policy will result in immediate link deletion and account termination without refund.</p>
+
+      <h3>Prohibited Activities</h3>
+      <p>You may strictly NOT use Jachu to shorten links to:</p>
+      <ul>
+        <li><strong>Malware & Phishing:</strong> Sites hosting viruses, trojans, ransomware, or fake login pages designed to steal credentials.</li>
+        <li><strong>Illegal Content:</strong> Child Sexual Abuse Material (CSAM), non-consensual pornography, illegal drug sales, or weapons trafficking.</li>
+        <li><strong>Violence & Hate Speech:</strong> Content promoting terrorism, self-harm, or violence against specific groups.</li>
+        <li><strong>Spam:</strong> Unsolicited bulk messaging via SMS, Email, or WhatsApp.</li>
+      </ul>
+
+      <div class="alert-box alert-danger">
+        <strong>Automated Scanning:</strong> We employ automated systems (Google Safe Browsing API) to scan links for known threats. Suspicious links are automatically disabled.
+      </div>
+    </section>
+
+    <section id="cookies" class="doc-section">
+      <h2>🍪 Cookie Policy</h2>
+      <p>Jachu uses cookies and local storage technologies to enhance your experience.</p>
+
+      <h3>Types of Cookies Used</h3>
+      <ul>
+        <li><strong>Essential Cookies:</strong> Required for authentication (keeping you logged in).</li>
+        <li><strong>Functional Cookies:</strong> Store your preferences (e.g., sidebar state).</li>
+        <li><strong>Security Cookies:</strong> Help identify and prevent security risks (e.g., CSRF protection).</li>
+      </ul>
+      <p>We do <strong>not</strong> use third-party advertising cookies or cross-site tracking cookies.</p>
+    </section>
+
+    <section id="refund" class="doc-section">
+      <h2>💸 Refund & Cancellation Policy</h2>
+      <p>As we use a manual verification system for UPI payments, our refund policy is designed to be fair and transparent.</p>
+
+      <h3>1. Eligibility</h3>
+      <ul>
+        <li><strong>Service Failure:</strong> If your account is not upgraded within 48 hours of a confirmed payment, you are eligible for a 100% refund.</li>
+        <li><strong>Buyer's Remorse:</strong> You may request a refund within 24 hours of purchase, provided you have used less than 10% of your plan's link quota.</li>
+      </ul>
+
+      <h3>2. Non-Refundable Scenarios</h3>
+      <p>Refunds will <strong>not</strong> be issued if:</p>
+      <ul>
+        <li>Your account was terminated for violating the Acceptable Use Policy (e.g., phishing).</li>
+        <li>The request is made more than 24 hours after purchase.</li>
+      </ul>
+
+      <h3>3. How to Request</h3>
+      <p>Email <a href="mailto:refunds@jachu.xyz" style="color:var(--primary-accent)">refunds@jachu.xyz</a> with your Transaction ID and Registered Email.</p>
+    </section>
+
+    <section id="sla" class="doc-section">
+      <h2>📈 Service Level Agreement (SLA)</h2>
+      <p>For paying customers (Pro & Premium plans), we aim to maintain high availability.</p>
+
+      <h3>Uptime Commitment</h3>
+      <p>We target a <strong>99.9% Monthly Uptime</strong> for link redirection. This excludes scheduled maintenance windows.</p>
+
+      <h3>Credits</h3>
+      <p>If uptime falls below 99.0% in a given month, paid users may request a service credit equivalent to 1 month of their plan value.</p>
+    </section>
+
+    <section id="dmca" class="doc-section">
+      <h2>©️ DMCA & Copyright</h2>
+      <p>Jachu respects the intellectual property rights of others. We respond to valid notices of alleged copyright infringement.</p>
+
+      <h3>Submitting a Takedown Notice</h3>
+      <p>If you believe a link shortened on our service directs to content that infringes your copyright, please send a notice to <a href="mailto:contact@kamarjahan.in" style="color:var(--primary-accent)">contact@kamarjahan.in</a> including:</p>
+      <ol>
+        <li>Identification of the copyrighted work.</li>
+        <li>The specific Jachu URL (e.g., jachu.xyz/example).</li>
+        <li>A statement of good faith belief.</li>
+        <li>Your physical or electronic signature.</li>
+      </ol>
+    </section>
+
+    <section id="contact" class="doc-section">
+      <h2>📞 Contact Information</h2>
+      <p>For legal inquiries, support, or reports, please reach out through the official channels below.</p>
+
+      <div class="alert-box alert-warning">
+        <strong>Report Abuse:</strong> To report phishing or malware, email <a href="mailto:ztenkammu@gmail.com" style="color:#000;">ztenkammu@gmail.com</a> for the fastest response (typically &lt;4 hours).
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 30px;">
+        <div style="background: rgba(255,255,255,0.03); padding: 20px; border-radius: 12px; border: 1px solid var(--border-color);">
+          <h4 style="margin-top:0;">📧 Electronic Mail</h4>
+          <p style="margin-bottom: 5px;"><strong>General:</strong> mail@jachu.xyz</p>
+          <p style="margin-bottom: 5px;"><strong>Legal:</strong> contact@kamarjahan.in</p>
+          <p><strong>Abuse:</strong> ztenkammu@gmail.com</p>
+        </div>
+
+        <div style="background: rgba(255,255,255,0.03); padding: 20px; border-radius: 12px; border: 1px solid var(--border-color);">
+          <h4 style="margin-top:0;">📍 Mailing Address</h4>
+          <p>
+            Jachu Administration<br>
+            Kanhangad, Kasaragod<br>
+            Kerala - 671316<br>
+            India
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <section id="api-terms" class="doc-section">
+      <h2>🤖 API Usage Policy</h2>
+      <p>Use of the Jachu API is subject to the following limits and rules.</p>
+
+      <h3>Rate Limits</h3>
+      <ul>
+        <li><strong>Free Tier:</strong> 50 Requests / Month</li>
+        <li><strong>Basic Pro:</strong> 269 Requests / Month</li>
+        <li><strong>Standard:</strong> 450 Requests / Month</li>
+        <li><strong>Premium:</strong> 700+ Requests / Month</li>
+      </ul>
+      <p>Exceeding these limits will result in a <code>429 Too Many Requests</code> response.</p>
+
+      <h3>Data Caching</h3>
+      <p>You may cache API responses locally for up to 24 hours to improve performance. You may NOT resell or redistribute our API data directly.</p>
+    </section>
+
+  </main>
+</div>
+
+<script>
+  // 1. Search Functionality
+  function filterDocs() {
+    const input = document.getElementById('searchInput');
+    const filter = input.value.toUpperCase();
+    const main = document.querySelector('.doc-content');
+    const sections = main.getElementsByTagName('section');
+
+    for (let i = 0; i < sections.length; i++) {
+      const txtValue = sections[i].textContent || sections[i].innerText;
+      if (txtValue.toUpperCase().indexOf(filter) > -1) {
+        sections[i].style.display = "";
+      } else {
+        sections[i].style.display = "none";
+      }
+    }
+  }
+
+  // 2. Active Link Highlighting
+  const sections = document.querySelectorAll('section');
+  const navLinks = document.querySelectorAll('.nav-link');
+
+  window.addEventListener('scroll', () => {
+    let current = '';
+    sections.forEach(section => {
+      const sectionTop = section.offsetTop;
+      const sectionHeight = section.clientHeight;
+      if (scrollY >= (sectionTop - 150)) {
+        current = section.getAttribute('id');
+      }
+    });
+
+    navLinks.forEach(a => {
+      a.classList.remove('active');
+      if (a.getAttribute('href').includes(current)) {
+        a.classList.add('active');
+      }
+    });
+  });
+
+  // 3. Mobile Nav Toggle
+  function toggleMobileNav() {
+    const nav = document.querySelectorAll('.nav-group');
+    nav.forEach(n => n.classList.toggle('mobile-visible'));
+  }
+</script>
+
 </body>
 </html>

@@ -225,3 +225,41 @@ select.input { cursor: pointer; }
   50% { transform: scale(1.2); opacity: 1; } 
 }
 @keyframes gradientText { to { background-position: 200% center; } }
+
+
+/* ... Keep existing CSS ... */
+
+/* Sidebar Navigation Styles */
+.sidebar-nav {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+.nav-item {
+    padding: 15px;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.03);
+    color: var(--text-main);
+    text-decoration: none;
+    font-weight: 500;
+    transition: 0.2s;
+    border: 1px solid transparent;
+}
+.nav-item:hover {
+    background: rgba(99, 102, 241, 0.1);
+    border-color: var(--primary-accent);
+    color: white;
+    transform: translateX(5px);
+}
+
+/* Close Button on Modal */
+.close-modal {
+    position: absolute; top: 15px; right: 15px;
+    font-size: 24px; color: #aaa; background: none; border: none; cursor: pointer;
+}
+.close-modal:hover { color: white; }
+
+/* Date Input Fix for Dark Mode */
+input[type="datetime-local"] {
+    color-scheme: dark;
+}

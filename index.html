@@ -27,11 +27,11 @@
 
   <div id="authButtons">
     <div id="userIdDisplay" style="color: #94a3b8; font-size: 0.9rem; margin-right: 8px;"></div>
+    <a href="/my-links.html" class="button" style="background: rgba(99, 102, 241, 0.1); color: #818cf8; border: 1px solid rgba(99, 102, 241, 0.3); display: none;" id="myLinksBtn">My Links</a>
     <a href="/download.html" class="button" style="background: transparent; border: none; box-shadow: none; color: #a5b4fc;">📲 App</a>
     <a href="/api/dashboard.html" class="button" style="background: transparent; border: none; box-shadow: none; color: #a5b4fc;">Developers</a>
-    <a href="legal.html" class="button" style="background: transparent; border: none; box-shadow: none;">Legal</a>
-    <button class="button" onclick="toggleAuthModal()">Login</button>
-    <button class="button" onclick="signOut()" style="display: none;">Sign Out</button>
+    <button class="button" onclick="toggleAuthModal()" id="loginBtnTop">Login</button>
+    <button class="button" onclick="signOut()" id="signoutBtnTop" style="display: none;">Sign Out</button>
   </div>
 
   <button class="hamburger-menu" onclick="toggleSidebar()">
@@ -42,24 +42,26 @@
 
   <div id="sidebar" class="sidebar">
     <div class="sidebar-header">
-      <h2>👤 My Links</h2>
+      <h2>Menu</h2>
       <button class="close-btn" onclick="closeSidebar()">✕</button>
     </div>
 
     <div class="sidebar-content">
-      <p id="userEmail" style="font-size: 0.85rem; color: #6366f1; margin-bottom: 20px;"></p>
-      <div id="userLinksList" style="display: flex; flex-direction: column;"></div>
+      <nav class="sidebar-nav">
+          <a href="/index.html" class="nav-item">🏠 Home</a>
+          <a href="/my-links.html" class="nav-item">🔗 My Links</a>
+          <a href="/download.html" class="nav-item">📲 Download App</a>
+          <a href="/api/dashboard.html" class="nav-item">⚡ Developers API</a>
+          <a href="/legal.html" class="nav-item">⚖️ Legal & Privacy</a>
+      </nav>
     </div>
     
     <div class="sidebar-footer">
-      <a href="/api/dashboard.html" class="button" style="margin-bottom: 10px; text-align: center; text-decoration: none; display: block; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);">⚡ Developer API</a>
-      
+      <div id="mobileUserDisplay" style="margin-bottom: 10px; color: #94a3b8; text-align: center; font-size: 0.9rem;"></div>
       <button id="mobileLoginBtn" class="button" onclick="toggleAuthModal(); closeSidebar()" style="width: 100%;">Login / Sign Up</button>
-      
       <button id="mobileSignoutBtn" class="button" onclick="signOut()" style="background: #ef4444; width: 100%; display: none;">Sign Out</button>
     </div>
-
-    </div>
+  </div>
 
   <div class="main-container">
     <h1 class="title">Shorten Your Links</h1>
@@ -90,6 +92,15 @@
 
     <div id="result" class="result-box"></div>
   </div>
+
+  <footer style="margin-top: 80px; padding: 20px; text-align: center; color: var(--text-muted); font-size: 0.9rem;">
+     <p>
+         <a href="/legal.html" style="color: inherit; margin: 0 10px;">Privacy Policy</a> • 
+         <a href="/legal.html" style="color: inherit; margin: 0 10px;">Terms</a> • 
+         <a href="/api/dashboard.html" style="color: inherit; margin: 0 10px;">API</a>
+     </p>
+     <p>&copy; 2026 Jachu. All rights reserved.</p>
+  </footer>
 
   <div id="authModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.8); backdrop-filter: blur(5px); z-index:9999; justify-content:center; align-items:center;">
     <div class="shortener-box" style="width: 350px; text-align: center;">
@@ -123,7 +134,6 @@
   <script src="/file/script.js"></script>
   
   <script>
-    /* UI Logic for Sidebar */
     function toggleSidebar() {
       const sidebar = document.getElementById('sidebar');
       const overlay = document.getElementById('overlay');
@@ -137,6 +147,5 @@
   </script>
 
   <script src='https://cdn.jotfor.ms/agent/embedjs/0197fa7374c97c9fade854e7f577b1bedcde/embed.js'></script>
-  
 </body>
 </html>
