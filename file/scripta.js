@@ -159,32 +159,16 @@ function formatCurrencyINR(value) {
   return new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(value || 0);
 }
 
-
-async function fetchDonationsFromApi() {
-  const user = firebase.auth().currentUser;
-  if (!user) throw new Error('Not authenticated');
-  const token = await user.getIdToken();
-
-  const res = await fetch(`${window.location.origin}/api/donations`, {
-    method: 'GET',
-    headers: { Authorization: `Bearer ${token}` }
-  });
-
-  const payload = await res.json().catch(() => ({}));
-  if (!res.ok || payload.status !== 'success') {
-    throw new Error(payload.message || 'Unable to fetch donations');
-  }
-
-  return payload;
-}
-
 function loadDonationStats() {
-  fetchDonationsFromApi().then((payload) => {
+  db.ref('donations').once('value').then((snap) => {
+    const donations = Object.values(snap.val() || {});
+    const totalAmount = donations.reduce((sum, item) => sum + (Number(item.amount) || 0), 0);
+
     const countEl = document.getElementById('donationCount');
     const amountEl = document.getElementById('donationTotalAmount');
 
-    if (countEl) countEl.innerText = payload.stats?.count || 0;
-    if (amountEl) amountEl.innerText = formatCurrencyINR(payload.stats?.totalAmount || 0);
+    if (countEl) countEl.innerText = donations.length;
+    if (amountEl) amountEl.innerText = formatCurrencyINR(totalAmount);
   }).catch(() => {
     const countEl = document.getElementById('donationCount');
     const amountEl = document.getElementById('donationTotalAmount');
@@ -610,8 +594,9 @@ function loadDonations() {
 
   tbody.innerHTML = '<tr><td colspan="6">Loading donations...</td></tr>';
 
-  fetchDonationsFromApi().then((payload) => {
-    const donations = payload.donations || [];
+  db.ref('donations').once('value').then((snap) => {
+    const donations = Object.values(snap.val() || {});
+    donations.sort((a, b) => (Number(b.createdAt) || 0) - (Number(a.createdAt) || 0));
 
     if (!donations.length) {
       tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:#94a3b8;">No donations yet.</td></tr>';
@@ -644,8 +629,8 @@ function loadDonations() {
 }
 
 function exportDonationsCSV() {
-  fetchDonationsFromApi().then((payload) => {
-    const donations = payload.donations || [];
+  db.ref('donations').once('value').then((snap) => {
+    const donations = Object.values(snap.val() || {});
     if (!donations.length) {
       showToast('No donations available for export', 'error');
       return;

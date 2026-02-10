@@ -73,15 +73,11 @@ async function saveDonation(body, env) {
   const donation = mapDonationRecord(body);
   const saveUrl = `${env.FIREBASE_DB_URL}/donations/${donation.paymentId}.json?auth=${env.FIREBASE_DB_SECRET}`;
 
-  const writeRes = await fetch(saveUrl, {
+  await fetch(saveUrl, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(donation)
   });
-
-  if (!writeRes.ok) {
-    throw new Error('Failed to write donation');
-  }
 
   return donation;
 }
@@ -89,7 +85,6 @@ async function saveDonation(body, env) {
 async function getDonations(env) {
   const listUrl = `${env.FIREBASE_DB_URL}/donations.json?auth=${env.FIREBASE_DB_SECRET}`;
   const res = await fetch(listUrl);
-  if (!res.ok) throw new Error('Failed to fetch donations');
   const raw = await res.json();
   const donations = Object.values(raw || {}).sort((a, b) => (Number(b.createdAt) || 0) - (Number(a.createdAt) || 0));
 
@@ -122,9 +117,7 @@ export async function onRequest(context) {
       const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : null;
       const user = await verifyFirebaseIdToken(token, env);
 
-      const userEmail = (user?.email || '').trim().toLowerCase();
-      const adminEmail = String(env.ADMIN_EMAIL || '').trim().toLowerCase();
-      if (!user || !userEmail || userEmail !== adminEmail) {
+      if (!user || user.email !== env.ADMIN_EMAIL) {
         return jsonResponse({ status: 'error', message: 'Unauthorized' }, 403);
       }
 
