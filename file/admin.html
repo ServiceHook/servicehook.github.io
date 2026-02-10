@@ -36,6 +36,7 @@
         <li onclick="switchSection('manage')" id="nav-manage">🔗 Manage Links</li>
         <li onclick="switchSection('users')" id="nav-users">👥 API Users</li>
         <li onclick="switchSection('billing')" id="nav-billing">💰 Billing <span id="billBadge" style="background:red; color:white; font-size:0.7rem; padding:2px 5px; border-radius:10px; display:none;">!</span></li>
+        <li onclick="switchSection('donations')" id="nav-donations">💜 Donations</li>
         <li onclick="switchSection('ban')" id="nav-ban">🚫 Banned Users</li>
         <li onclick="logout()" style="margin-top: auto; color: #ef4444;">🚪 Logout</li>
       </ul>
@@ -53,6 +54,14 @@
           <div class="stat-card">
             <h3>Created Today</h3>
             <p id="todayCount" style="color: #4ade80;">0</p>
+          </div>
+          <div class="stat-card">
+            <h3>Total Donations</h3>
+            <p id="donationCount" style="color: #f472b6;">0</p>
+          </div>
+          <div class="stat-card">
+            <h3>Donation Amount</h3>
+            <p id="donationTotalAmount" style="color: #22d3ee;">₹0</p>
           </div>
         </div>
         <div class="stat-card" style="margin-bottom: 30px; border: 1px solid var(--border-color); padding: 20px;">
@@ -129,6 +138,33 @@
             </thead>
             <tbody></tbody>
         </table>
+      </div>
+
+
+      <div id="donations" class="section hidden">
+        <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; margin-bottom:12px;">
+          <h2>💜 Donation Records</h2>
+          <div style="display:flex; gap:10px;">
+            <button onclick="loadDonations()" class="button">🔄 Refresh</button>
+            <button onclick="exportDonationsCSV()" class="button" style="background:#0ea5e9;">⬇ Export CSV</button>
+          </div>
+        </div>
+        <p style="color: var(--text-muted);">Shows successful donations from the Donate page (including note, purpose, and payment ID).</p>
+        <div class="table-container">
+          <table id="donationsTable">
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Donor</th>
+                <th>Purpose</th>
+                <th>Amount</th>
+                <th>Payment ID</th>
+                <th>Note</th>
+              </tr>
+            </thead>
+            <tbody><tr><td colspan="6">No donation data loaded.</td></tr></tbody>
+          </table>
+        </div>
       </div>
 
       <div id="ban" class="section hidden">
