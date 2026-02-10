@@ -67,6 +67,10 @@
     @keyframes popIn {
       from { transform: translateY(8px) scale(0.98); opacity: 0; }
       to { transform: translateY(0) scale(1); opacity: 1; }
+    .row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
     }
     @media (max-width: 600px) {
       .row { grid-template-columns: 1fr; }
@@ -141,6 +145,12 @@
         <p id="successLine2"></p>
         <p style="opacity:0.9;">Thank you for supporting Jachu. Your donation was also saved to admin panel records.</p>
       </div>
+      <div class="input-group">
+        <textarea id="donationNote" class="input" rows="4" placeholder="Add a note (optional)"></textarea>
+      </div>
+
+      <button id="payBtn" class="button" onclick="startDonation()">Donate with Razorpay</button>
+      <p class="note">Test mode enabled with Razorpay test key. Use Razorpay's demo card/UPI details in checkout to simulate a payment.</p>
     </div>
   </div>
 
@@ -171,6 +181,9 @@
     noteInput.addEventListener('input', () => {
       noteCount.innerText = noteInput.value.length;
     });
+  <script>
+    const presetButtons = document.querySelectorAll('.amount-chip');
+    const amountInput = document.getElementById('donationAmount');
 
     presetButtons.forEach((button) => {
       button.addEventListener('click', () => {
@@ -231,6 +244,15 @@
       const form = readFormData();
 
       if (!form.amountInInr || form.amountInInr < 1) {
+    function startDonation() {
+      const amountInInr = Number(amountInput.value);
+      const donorName = document.getElementById('donorName').value.trim();
+      const donorEmail = document.getElementById('donorEmail').value.trim();
+      const donorPhone = document.getElementById('donorPhone').value.trim();
+      const donationPurpose = document.getElementById('donationPurpose').value;
+      const donationNote = document.getElementById('donationNote').value.trim();
+
+      if (!amountInInr || amountInInr < 1) {
         alert('Please enter a valid donation amount.');
         return;
       }
@@ -243,6 +265,7 @@
       const amountInPaise = Math.round(form.amountInInr * 100);
       payBtn.disabled = true;
       payBtn.innerText = 'Opening Checkout...';
+      const amountInPaise = Math.round(amountInInr * 100);
 
       const options = {
         key: 'rzp_test_SEVKPNh3Axs1we',
@@ -260,6 +283,16 @@
           purpose: form.donationPurpose,
           donor_note: form.donationNote || 'No note provided',
           anonymous: String(form.anonymousMode)
+        description: `Donation - ${donationPurpose}`,
+        image: 'https://jachu.in/manifest-icon-512.maskable.png',
+        prefill: {
+          name: donorName,
+          email: donorEmail,
+          contact: donorPhone
+        },
+        notes: {
+          purpose: donationPurpose,
+          donor_note: donationNote || 'No note provided'
         },
         theme: {
           color: '#6366f1'
@@ -278,6 +311,12 @@
           ondismiss: function () {
             payBtn.disabled = false;
             payBtn.innerText = 'Donate with Razorpay';
+        handler: function (response) {
+          alert('Thank you for your donation! Payment ID: ' + response.razorpay_payment_id);
+        },
+        modal: {
+          ondismiss: function () {
+            console.log('Donation checkout closed');
           }
         }
       };
