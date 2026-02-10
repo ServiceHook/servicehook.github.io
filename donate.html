@@ -64,14 +64,12 @@
     }
     #successCard h3 { margin-top: 0; margin-bottom: 8px; color: #4ade80; }
     #successCard p { margin: 4px 0; color: #dcfce7; font-size: 0.92rem; }
+    
     @keyframes popIn {
       from { transform: translateY(8px) scale(0.98); opacity: 0; }
       to { transform: translateY(0) scale(1); opacity: 1; }
-    .row {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 12px;
     }
+
     @media (max-width: 600px) {
       .row { grid-template-columns: 1fr; }
       .donation-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -145,21 +143,17 @@
         <p id="successLine2"></p>
         <p style="opacity:0.9;">Thank you for supporting Jachu. Your donation was also saved to admin panel records.</p>
       </div>
-      <div class="input-group">
-        <textarea id="donationNote" class="input" rows="4" placeholder="Add a note (optional)"></textarea>
-      </div>
-
-      <button id="payBtn" class="button" onclick="startDonation()">Donate with Razorpay</button>
-      <p class="note">Test mode enabled with Razorpay test key. Use Razorpay's demo card/UPI details in checkout to simulate a payment.</p>
     </div>
   </div>
 
   <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+  
   <script>
     let donationDb = null;
 
+    // 1. Initialize Firebase
     async function initDonationStorage() {
       try {
         const response = await fetch('/api/get_config');
@@ -170,29 +164,30 @@
         console.error('Donation storage init failed', error);
       }
     }
-
     initDonationStorage();
 
+    // 2. UI Event Listeners
     const presetButtons = document.querySelectorAll('.amount-chip');
     const amountInput = document.getElementById('donationAmount');
     const noteInput = document.getElementById('donationNote');
     const noteCount = document.getElementById('noteCount');
 
+    // Char counter
     noteInput.addEventListener('input', () => {
       noteCount.innerText = noteInput.value.length;
     });
-  <script>
-    const presetButtons = document.querySelectorAll('.amount-chip');
-    const amountInput = document.getElementById('donationAmount');
 
+    // Preset Amount Chips
     presetButtons.forEach((button) => {
       button.addEventListener('click', () => {
         presetButtons.forEach((b) => b.classList.remove('active'));
         button.classList.add('active');
+        // Data-amount is in paise, convert to INR for input
         amountInput.value = Math.floor(Number(button.dataset.amount) / 100);
       });
     });
 
+    // 3. Helper Functions
     function readFormData() {
       const anonymousMode = document.getElementById('anonymousMode').checked;
       return {
@@ -239,21 +234,14 @@
       await donationDb.ref(`donations/${response.razorpay_payment_id}`).set(donationRecord);
     }
 
-    async function startDonation() {
+    // 4. Main Donation Logic
+    function startDonation() {
       const payBtn = document.getElementById('payBtn');
       const form = readFormData();
 
+      // Validation
       if (!form.amountInInr || form.amountInInr < 1) {
-    function startDonation() {
-      const amountInInr = Number(amountInput.value);
-      const donorName = document.getElementById('donorName').value.trim();
-      const donorEmail = document.getElementById('donorEmail').value.trim();
-      const donorPhone = document.getElementById('donorPhone').value.trim();
-      const donationPurpose = document.getElementById('donationPurpose').value;
-      const donationNote = document.getElementById('donationNote').value.trim();
-
-      if (!amountInInr || amountInInr < 1) {
-        alert('Please enter a valid donation amount.');
+        alert('Please enter a valid donation amount (minimum ₹1).');
         return;
       }
 
@@ -262,18 +250,19 @@
         return;
       }
 
-      const amountInPaise = Math.round(form.amountInInr * 100);
+      // UI Feedback
       payBtn.disabled = true;
       payBtn.innerText = 'Opening Checkout...';
-      const amountInPaise = Math.round(amountInInr * 100);
+
+      const amountInPaise = Math.round(form.amountInInr * 100);
 
       const options = {
         key: 'rzp_test_SEVKPNh3Axs1we',
         amount: amountInPaise,
         currency: 'INR',
-        name: 'Jachu',
+        name: 'Jachu Services',
         description: `Donation - ${form.donationPurpose}`,
-        image: 'https://jachu.in/manifest-icon-512.maskable.png',
+        image: 'https://jachu.xyz/manifest-icon-512.maskable.png', // Corrected domain fallback
         prefill: {
           name: form.anonymousMode ? '' : form.donorName,
           email: form.anonymousMode ? '' : form.donorEmail,
@@ -283,22 +272,13 @@
           purpose: form.donationPurpose,
           donor_note: form.donationNote || 'No note provided',
           anonymous: String(form.anonymousMode)
-        description: `Donation - ${donationPurpose}`,
-        image: 'https://jachu.in/manifest-icon-512.maskable.png',
-        prefill: {
-          name: donorName,
-          email: donorEmail,
-          contact: donorPhone
-        },
-        notes: {
-          purpose: donationPurpose,
-          donor_note: donationNote || 'No note provided'
         },
         theme: {
           color: '#6366f1'
         },
         handler: async function (response) {
           try {
+            payBtn.innerText = 'Processing...';
             await saveDonationToAdmin(form, response);
           } catch (error) {
             console.error('Could not save donation', error);
@@ -311,22 +291,18 @@
           ondismiss: function () {
             payBtn.disabled = false;
             payBtn.innerText = 'Donate with Razorpay';
-        handler: function (response) {
-          alert('Thank you for your donation! Payment ID: ' + response.razorpay_payment_id);
-        },
-        modal: {
-          ondismiss: function () {
-            console.log('Donation checkout closed');
           }
         }
       };
 
       const checkout = new Razorpay(options);
+      
       checkout.on('payment.failed', function (response) {
         payBtn.disabled = false;
         payBtn.innerText = 'Try Donation Again';
         alert('Payment failed: ' + response.error.description);
       });
+
       checkout.open();
     }
   </script>
