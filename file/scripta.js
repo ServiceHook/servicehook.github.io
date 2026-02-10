@@ -82,6 +82,7 @@ function initAdminPanel() {
   document.getElementById("adminContent").style.display = "flex";
   switchSection('dashboard');
   loadDashboard();
+  loadDonationStats();
   checkPendingBills();
 }
 
@@ -99,6 +100,7 @@ function switchSection(id) {
   if(id === 'manage') loadLinks();
   if(id === 'ban') { loadBannedUsers(); loadBannedIps(); }
   if(id === 'billing') loadBilling();
+  if(id === 'donations') loadDonations();
   if(id === 'users') loadApiUsers(); 
 }
 
@@ -149,6 +151,29 @@ function loadDashboard() {
         }
     };
     attemptRender();
+  });
+}
+
+
+function formatCurrencyINR(value) {
+  return new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(value || 0);
+}
+
+function loadDonationStats() {
+  db.ref('donations').once('value').then((snap) => {
+    const donations = Object.values(snap.val() || {});
+    const totalAmount = donations.reduce((sum, item) => sum + (Number(item.amount) || 0), 0);
+
+    const countEl = document.getElementById('donationCount');
+    const amountEl = document.getElementById('donationTotalAmount');
+
+    if (countEl) countEl.innerText = donations.length;
+    if (amountEl) amountEl.innerText = formatCurrencyINR(totalAmount);
+  }).catch(() => {
+    const countEl = document.getElementById('donationCount');
+    const amountEl = document.getElementById('donationTotalAmount');
+    if (countEl) countEl.innerText = '0';
+    if (amountEl) amountEl.innerText = '₹0';
   });
 }
 
@@ -560,4 +585,85 @@ function checkPendingBills() {
         const badge = document.getElementById("billBadge");
         if(badge) badge.style.display = snap.exists() ? "inline-block" : "none";
     });
+}
+
+
+function loadDonations() {
+  const tbody = document.querySelector('#donationsTable tbody');
+  if (!tbody) return;
+
+  tbody.innerHTML = '<tr><td colspan="6">Loading donations...</td></tr>';
+
+  db.ref('donations').once('value').then((snap) => {
+    const donations = Object.values(snap.val() || {});
+    donations.sort((a, b) => (Number(b.createdAt) || 0) - (Number(a.createdAt) || 0));
+
+    if (!donations.length) {
+      tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:#94a3b8;">No donations yet.</td></tr>';
+      return;
+    }
+
+    tbody.innerHTML = '';
+    donations.forEach((d) => {
+      const tr = document.createElement('tr');
+      const donorLabel = d.anonymous ? 'Anonymous' : (d.donorName || 'Unknown');
+      const emailLine = d.donorEmail ? `<div style="font-size:0.8rem; color:#94a3b8;">${d.donorEmail}</div>` : '';
+      const date = d.createdAt ? new Date(d.createdAt).toLocaleString() : '-';
+      const paymentId = d.paymentId || '-';
+      const note = (d.donorNote || '-').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+      tr.innerHTML = `
+        <td>${date}</td>
+        <td><strong>${donorLabel}</strong>${emailLine}</td>
+        <td>${d.purpose || 'General support'}</td>
+        <td style="color:#4ade80; font-weight:600;">₹${d.amount || 0}</td>
+        <td style="font-family:monospace; color:#fbbf24;">${paymentId}</td>
+        <td style="max-width:280px; white-space:normal;">${note}</td>
+      `;
+      tbody.appendChild(tr);
+    });
+
+    loadDonationStats();
+  }).catch((err) => {
+    tbody.innerHTML = `<tr><td colspan="6" style="color:#ef4444; text-align:center;">Failed to load donations: ${err.message}</td></tr>`;
+  });
+}
+
+function exportDonationsCSV() {
+  db.ref('donations').once('value').then((snap) => {
+    const donations = Object.values(snap.val() || {});
+    if (!donations.length) {
+      showToast('No donations available for export', 'error');
+      return;
+    }
+
+    const rows = [['date', 'donor_name', 'email', 'amount_inr', 'purpose', 'payment_id', 'note']];
+    donations.forEach((d) => {
+      rows.push([
+        d.createdAt ? new Date(d.createdAt).toISOString() : '',
+        d.anonymous ? 'Anonymous' : (d.donorName || ''),
+        d.donorEmail || '',
+        String(d.amount || 0),
+        d.purpose || '',
+        d.paymentId || '',
+        (d.donorNote || '').replace(/\n/g, ' ').replace(/\r/g, ' ')
+      ]);
+    });
+
+    const csv = rows.map((r) => r.map((cell) => {
+      const value = String(cell || '');
+      return /[",\n]/.test(value) ? `"${value.replace(/"/g, '""')}"` : value;
+    }).join(',')).join('\n');
+
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `jachu-donations-${Date.now()}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+
+    showToast('Donations exported', 'success');
+  }).catch((err) => showToast('Export failed: ' + err.message, 'error'));
 }
