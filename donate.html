@@ -33,6 +33,18 @@
       box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
       background: rgba(79, 70, 229, 0.2);
     }
+    .row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+    .char-counter {
+      margin-top: -6px;
+      margin-bottom: 14px;
+      text-align: right;
+      color: var(--text-muted);
+      font-size: 0.8rem;
+    }
     .note {
       margin-top: 18px;
       font-size: 0.9rem;
@@ -40,6 +52,21 @@
       line-height: 1.5;
       text-align: center;
     }
+    #successCard {
+      display: none;
+      margin-top: 16px;
+      padding: 18px;
+      border: 1px solid rgba(34, 197, 94, 0.35);
+      background: rgba(34, 197, 94, 0.1);
+      border-radius: 14px;
+      text-align: left;
+      animation: popIn 0.35s ease;
+    }
+    #successCard h3 { margin-top: 0; margin-bottom: 8px; color: #4ade80; }
+    #successCard p { margin: 4px 0; color: #dcfce7; font-size: 0.92rem; }
+    @keyframes popIn {
+      from { transform: translateY(8px) scale(0.98); opacity: 0; }
+      to { transform: translateY(0) scale(1); opacity: 1; }
     .row {
       display: grid;
       grid-template-columns: 1fr 1fr;
@@ -98,6 +125,26 @@
         </div>
       </div>
 
+      <div class="input-group" style="margin-top: -2px; margin-bottom: 12px;">
+        <label style="display:flex; align-items:center; gap:8px; color: var(--text-muted); cursor:pointer;">
+          <input id="anonymousMode" type="checkbox" /> Donate anonymously
+        </label>
+      </div>
+
+      <div class="input-group">
+        <textarea id="donationNote" class="input" rows="4" maxlength="240" placeholder="Add a note (optional)"></textarea>
+        <div class="char-counter"><span id="noteCount">0</span>/240</div>
+      </div>
+
+      <button id="payBtn" class="button" onclick="startDonation()">Donate with Razorpay</button>
+      <p class="note">Test mode enabled with Razorpay test key. Use Razorpay demo payment methods in checkout to simulate payment.</p>
+
+      <div id="successCard">
+        <h3>🎉 Donation Received</h3>
+        <p id="successLine1"></p>
+        <p id="successLine2"></p>
+        <p style="opacity:0.9;">Thank you for supporting Jachu. Your donation was also saved to admin panel records.</p>
+      </div>
       <div class="input-group">
         <textarea id="donationNote" class="input" rows="4" placeholder="Add a note (optional)"></textarea>
       </div>
@@ -108,6 +155,32 @@
   </div>
 
   <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+  <script>
+    let donationDb = null;
+
+    async function initDonationStorage() {
+      try {
+        const response = await fetch('/api/get_config');
+        const config = await response.json();
+        if (!firebase.apps.length) firebase.initializeApp(config.firebase);
+        donationDb = firebase.database();
+      } catch (error) {
+        console.error('Donation storage init failed', error);
+      }
+    }
+
+    initDonationStorage();
+
+    const presetButtons = document.querySelectorAll('.amount-chip');
+    const amountInput = document.getElementById('donationAmount');
+    const noteInput = document.getElementById('donationNote');
+    const noteCount = document.getElementById('noteCount');
+
+    noteInput.addEventListener('input', () => {
+      noteCount.innerText = noteInput.value.length;
+    });
   <script>
     const presetButtons = document.querySelectorAll('.amount-chip');
     const amountInput = document.getElementById('donationAmount');
@@ -120,6 +193,57 @@
       });
     });
 
+    function readFormData() {
+      const anonymousMode = document.getElementById('anonymousMode').checked;
+      return {
+        amountInInr: Number(amountInput.value),
+        donorName: document.getElementById('donorName').value.trim(),
+        donorEmail: document.getElementById('donorEmail').value.trim(),
+        donorPhone: document.getElementById('donorPhone').value.trim(),
+        donationPurpose: document.getElementById('donationPurpose').value,
+        donationNote: document.getElementById('donationNote').value.trim(),
+        anonymousMode
+      };
+    }
+
+    function showSuccessCard(form, paymentId) {
+      const card = document.getElementById('successCard');
+      document.getElementById('successLine1').innerText = `Payment ID: ${paymentId}`;
+      document.getElementById('successLine2').innerText = `Amount: ₹${form.amountInInr} • Purpose: ${form.donationPurpose}`;
+      card.style.display = 'block';
+      card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+
+    async function saveDonationToAdmin(form, response) {
+      if (!donationDb) return;
+
+      const donorName = form.anonymousMode ? 'Anonymous' : (form.donorName || 'Anonymous');
+      const donationRecord = {
+        amount: form.amountInInr,
+        amountInPaise: Math.round(form.amountInInr * 100),
+        currency: 'INR',
+        donorName,
+        donorEmail: form.anonymousMode ? '' : form.donorEmail,
+        donorPhone: form.anonymousMode ? '' : form.donorPhone,
+        anonymous: form.anonymousMode,
+        purpose: form.donationPurpose,
+        donorNote: form.donationNote || 'No note',
+        paymentId: response.razorpay_payment_id,
+        orderId: response.razorpay_order_id || '',
+        signature: response.razorpay_signature || '',
+        status: 'captured_test',
+        source: 'donate_page',
+        createdAt: Date.now()
+      };
+
+      await donationDb.ref(`donations/${response.razorpay_payment_id}`).set(donationRecord);
+    }
+
+    async function startDonation() {
+      const payBtn = document.getElementById('payBtn');
+      const form = readFormData();
+
+      if (!form.amountInInr || form.amountInInr < 1) {
     function startDonation() {
       const amountInInr = Number(amountInput.value);
       const donorName = document.getElementById('donorName').value.trim();
@@ -133,6 +257,14 @@
         return;
       }
 
+      if (!form.anonymousMode && !form.donorName) {
+        alert('Please enter your name or choose anonymous mode.');
+        return;
+      }
+
+      const amountInPaise = Math.round(form.amountInInr * 100);
+      payBtn.disabled = true;
+      payBtn.innerText = 'Opening Checkout...';
       const amountInPaise = Math.round(amountInInr * 100);
 
       const options = {
@@ -140,6 +272,17 @@
         amount: amountInPaise,
         currency: 'INR',
         name: 'Jachu',
+        description: `Donation - ${form.donationPurpose}`,
+        image: 'https://jachu.in/manifest-icon-512.maskable.png',
+        prefill: {
+          name: form.anonymousMode ? '' : form.donorName,
+          email: form.anonymousMode ? '' : form.donorEmail,
+          contact: form.anonymousMode ? '' : form.donorPhone
+        },
+        notes: {
+          purpose: form.donationPurpose,
+          donor_note: form.donationNote || 'No note provided',
+          anonymous: String(form.anonymousMode)
         description: `Donation - ${donationPurpose}`,
         image: 'https://jachu.in/manifest-icon-512.maskable.png',
         prefill: {
@@ -154,6 +297,20 @@
         theme: {
           color: '#6366f1'
         },
+        handler: async function (response) {
+          try {
+            await saveDonationToAdmin(form, response);
+          } catch (error) {
+            console.error('Could not save donation', error);
+          }
+          showSuccessCard(form, response.razorpay_payment_id);
+          payBtn.disabled = false;
+          payBtn.innerText = 'Donate Again';
+        },
+        modal: {
+          ondismiss: function () {
+            payBtn.disabled = false;
+            payBtn.innerText = 'Donate with Razorpay';
         handler: function (response) {
           alert('Thank you for your donation! Payment ID: ' + response.razorpay_payment_id);
         },
@@ -166,6 +323,8 @@
 
       const checkout = new Razorpay(options);
       checkout.on('payment.failed', function (response) {
+        payBtn.disabled = false;
+        payBtn.innerText = 'Try Donation Again';
         alert('Payment failed: ' + response.error.description);
       });
       checkout.open();
