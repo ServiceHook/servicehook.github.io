@@ -1,4 +1,4 @@
-// VERSION: SECURE_ENV_LOAD
+// VERSION: SECURE_ENV_LOAD_V2
 let db;
 let ADMIN_EMAIL = ""; // Fetched dynamically
 
@@ -82,7 +82,7 @@ function initAdminPanel() {
   document.getElementById("adminContent").style.display = "flex";
   switchSection('dashboard');
   loadDashboard();
-  loadDonations(); // This now uses the API!
+  loadDonationStats(); // UPDATED: Now uses API
   checkPendingBills();
 }
 
@@ -100,7 +100,7 @@ function switchSection(id) {
   if(id === 'manage') loadLinks();
   if(id === 'ban') { loadBannedUsers(); loadBannedIps(); }
   if(id === 'billing') loadBilling();
-  if(id === 'donations') loadDonations();
+  if(id === 'donations') loadDonations(); // UPDATED: Now uses API
   if(id === 'users') loadApiUsers(); 
 }
 
@@ -156,6 +156,30 @@ function loadDashboard() {
 
 function formatCurrencyINR(value) {
   return new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(value || 0);
+}
+
+// NEW: Fetch stats via API to avoid Permission Denied
+async function loadDonationStats() {
+  try {
+    const user = firebase.auth().currentUser;
+    if (!user) return;
+    const token = await user.getIdToken();
+
+    const response = await fetch('/api/donations', {
+      method: 'GET',
+      headers: { 'Authorization': 'Bearer ' + token }
+    });
+    
+    const data = await response.json();
+    if(data.status === 'success' && data.stats) {
+      const countEl = document.getElementById('donationCount');
+      const amountEl = document.getElementById('donationTotalAmount');
+      if (countEl) countEl.innerText = data.stats.count;
+      if (amountEl) amountEl.innerText = formatCurrencyINR(data.stats.totalAmount);
+    }
+  } catch(e) {
+    console.warn("Stats load failed", e);
+  }
 }
 
 function renderGrowthChart(links) {
@@ -316,7 +340,6 @@ async function loadApiUsers() {
       return;
     }
 
-    // Load links to cross-reference emails if needed
     const linksSnap = await db.ref("links").once("value");
     const uidToEmailMap = {};
     if (linksSnap.exists()) {
@@ -334,14 +357,17 @@ async function loadApiUsers() {
     });
 
     users.sort((a, b) => (b.limit || 0) - (a.limit || 0));
+
     tbody.innerHTML = ""; 
 
     users.forEach(u => {
       const isPaid = (u.limit || 50) > 50;
       const tr = document.createElement("tr");
+      
       if (isPaid) tr.style.background = "rgba(34, 197, 94, 0.1)";
 
       const resolvedEmail = u.email || uidToEmailMap[u.uid] || null;
+
       const displayUid = u.uid 
           ? `<span style="color:#60a5fa; font-family:monospace;">${u.uid}</span>` 
           : '<span style="color:red">No UID</span>';
@@ -398,7 +424,7 @@ function resetUserLimit(apiKey) {
     }
 }
 
-// --- BAN SYSTEM ---
+// --- BAN SYSTEM (EMAILS) ---
 function banUser(email) {
   if (!email) return showToast("No email associated", "error");
   if(confirm(`Ban user ${email}?`)) {
@@ -436,6 +462,7 @@ function loadBannedUsers() {
   });
 }
 
+// --- BAN SYSTEM (IPs) ---
 function manualBanIp() {
   const ip = document.getElementById('ipInput').value.trim();
   if(!ip) return showToast("Please enter an IP", "error");
@@ -565,7 +592,8 @@ function checkPendingBills() {
     });
 }
 
-// --- SECURE DONATION LOADER (The Fix!) ---
+
+// --- SECURE DONATION LOADER (FIXED) ---
 async function loadDonations() {
   const tbody = document.querySelector('#donationsTable tbody');
   if (!tbody) return;
@@ -576,8 +604,10 @@ async function loadDonations() {
     // 1. Get Auth Token
     const user = firebase.auth().currentUser;
     if (!user) {
-        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">Waiting for auth...</td></tr>';
-        return;
+         // If auth isn't ready yet, the observer in initAdminApp will eventually call this.
+         // But if we are here and not user, maybe we need to wait or return.
+         tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">Authenticating...</td></tr>';
+         return; 
     }
     const token = await user.getIdToken();
 
@@ -593,7 +623,7 @@ async function loadDonations() {
     const data = await response.json();
 
     if (data.status !== 'success') {
-        throw new Error(data.message || "API Error");
+       throw new Error(data.message || "API Error");
     }
 
     const donations = data.donations || [];
@@ -623,7 +653,7 @@ async function loadDonations() {
         });
     }
 
-    // 4. Update Stats (If returned by API)
+    // 4. Update Stats in case this is called directly
     if (data.stats) {
       const countEl = document.getElementById('donationCount');
       const amountEl = document.getElementById('donationTotalAmount');
@@ -638,8 +668,35 @@ async function loadDonations() {
 }
 
 function exportDonationsCSV() {
-    // Note: We need to use the API data for export too, but for simplicity, 
-    // the current button can re-fetch or use a cached global variable.
-    // For now, let's just alert the user to view the table.
-    alert("Please copy data from the table or implement full API export.");
+  // Uses the displayed table rows for export
+  const rows = [['date', 'donor', 'purpose', 'amount', 'payment_id', 'note']];
+  const trs = document.querySelectorAll('#donationsTable tbody tr');
+  
+  if(!trs.length || trs[0].innerText.includes('No donations')) {
+      showToast('No data to export', 'error');
+      return;
+  }
+
+  trs.forEach(tr => {
+      const cols = tr.querySelectorAll('td');
+      const rowData = [
+          cols[0].innerText,
+          cols[1].innerText.replace(/\n/g, ' '), // Name + Email
+          cols[2].innerText,
+          cols[3].innerText.replace('₹', ''),
+          cols[4].innerText,
+          cols[5].innerText
+      ];
+      rows.push(rowData.map(c => `"${c.replace(/"/g, '""')}"`));
+  });
+
+  const csvContent = rows.map(e => e.join(",")).join("\n");
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `donations-${Date.now()}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
 }
