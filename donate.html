@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Support Jachu | Donate</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/file/styles.css" />
+
+  <style>
+    .donation-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+      margin-bottom: 15px;
+    }
+    .amount-chip {
+      background: rgba(30, 41, 59, 0.45);
+      border: 1px solid var(--border-color);
+      color: var(--text-main);
+      border-radius: 10px;
+      padding: 12px;
+      cursor: pointer;
+      font-weight: 600;
+      transition: var(--transition-speed);
+    }
+    .amount-chip.active,
+    .amount-chip:hover {
+      border-color: var(--primary-accent);
+      box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+      background: rgba(79, 70, 229, 0.2);
+    }
+    .note {
+      margin-top: 18px;
+      font-size: 0.9rem;
+      color: var(--text-muted);
+      line-height: 1.5;
+      text-align: center;
+    }
+    .row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+    @media (max-width: 600px) {
+      .row { grid-template-columns: 1fr; }
+      .donation-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+  </style>
+</head>
+<body>
+  <div id="authButtons">
+    <a href="/index.html" class="button" style="background: transparent; border: none; box-shadow: none; color: #a5b4fc; width: auto; padding: 8px 12px;">🏠 Home</a>
+  </div>
+
+  <div class="main-container">
+    <h1 class="title">Support Jachu 💜</h1>
+
+    <div class="shortener-box">
+      <p style="margin-top: 0; color: var(--text-muted);">Your contribution helps keep this URL shortener fast, free, and improving every week.</p>
+
+      <div class="input-group">
+        <label for="donationAmount" style="display: block; margin-bottom: 8px; color: var(--text-muted);">Choose amount (INR)</label>
+        <div class="donation-grid" id="presetAmounts">
+          <button type="button" class="amount-chip" data-amount="9900">₹99</button>
+          <button type="button" class="amount-chip" data-amount="19900">₹199</button>
+          <button type="button" class="amount-chip" data-amount="49900">₹499</button>
+          <button type="button" class="amount-chip" data-amount="99900">₹999</button>
+          <button type="button" class="amount-chip" data-amount="149900">₹1499</button>
+          <button type="button" class="amount-chip" data-amount="249900">₹2499</button>
+        </div>
+        <input type="number" id="donationAmount" class="input" min="1" step="1" placeholder="Or enter custom amount in INR" />
+      </div>
+
+      <div class="row">
+        <div class="input-group">
+          <input type="text" id="donorName" class="input" placeholder="Your name" autocomplete="name" />
+        </div>
+        <div class="input-group">
+          <input type="email" id="donorEmail" class="input" placeholder="Your email" autocomplete="email" />
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="input-group">
+          <input type="tel" id="donorPhone" class="input" placeholder="Phone (optional)" autocomplete="tel" />
+        </div>
+        <div class="input-group">
+          <select id="donationPurpose" class="input">
+            <option value="General support">General support</option>
+            <option value="Server costs">Server costs</option>
+            <option value="Feature development">Feature development</option>
+            <option value="Open source contribution">Open source contribution</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="input-group">
+        <textarea id="donationNote" class="input" rows="4" placeholder="Add a note (optional)"></textarea>
+      </div>
+
+      <button id="payBtn" class="button" onclick="startDonation()">Donate with Razorpay</button>
+      <p class="note">Test mode enabled with Razorpay test key. Use Razorpay's demo card/UPI details in checkout to simulate a payment.</p>
+    </div>
+  </div>
+
+  <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+  <script>
+    const presetButtons = document.querySelectorAll('.amount-chip');
+    const amountInput = document.getElementById('donationAmount');
+
+    presetButtons.forEach((button) => {
+      button.addEventListener('click', () => {
+        presetButtons.forEach((b) => b.classList.remove('active'));
+        button.classList.add('active');
+        amountInput.value = Math.floor(Number(button.dataset.amount) / 100);
+      });
+    });
+
+    function startDonation() {
+      const amountInInr = Number(amountInput.value);
+      const donorName = document.getElementById('donorName').value.trim();
+      const donorEmail = document.getElementById('donorEmail').value.trim();
+      const donorPhone = document.getElementById('donorPhone').value.trim();
+      const donationPurpose = document.getElementById('donationPurpose').value;
+      const donationNote = document.getElementById('donationNote').value.trim();
+
+      if (!amountInInr || amountInInr < 1) {
+        alert('Please enter a valid donation amount.');
+        return;
+      }
+
+      const amountInPaise = Math.round(amountInInr * 100);
+
+      const options = {
+        key: 'rzp_test_SEVKPNh3Axs1we',
+        amount: amountInPaise,
+        currency: 'INR',
+        name: 'Jachu',
+        description: `Donation - ${donationPurpose}`,
+        image: 'https://jachu.in/manifest-icon-512.maskable.png',
+        prefill: {
+          name: donorName,
+          email: donorEmail,
+          contact: donorPhone
+        },
+        notes: {
+          purpose: donationPurpose,
+          donor_note: donationNote || 'No note provided'
+        },
+        theme: {
+          color: '#6366f1'
+        },
+        handler: function (response) {
+          alert('Thank you for your donation! Payment ID: ' + response.razorpay_payment_id);
+        },
+        modal: {
+          ondismiss: function () {
+            console.log('Donation checkout closed');
+          }
+        }
+      };
+
+      const checkout = new Razorpay(options);
+      checkout.on('payment.failed', function (response) {
+        alert('Payment failed: ' + response.error.description);
+      });
+      checkout.open();
+    }
+  </script>
+</body>
+</html>
