@@ -588,16 +588,33 @@ function checkPendingBills() {
 }
 
 
-function loadDonations() {
+async function loadDonations() {
   const tbody = document.querySelector('#donationsTable tbody');
   if (!tbody) return;
 
-  tbody.innerHTML = '<tr><td colspan="6">Loading donations...</td></tr>';
+  tbody.innerHTML = '<tr><td colspan="6">Loading donations via API...</td></tr>';
 
-  db.ref('donations').once('value').then((snap) => {
-    const donations = Object.values(snap.val() || {});
-    donations.sort((a, b) => (Number(b.createdAt) || 0) - (Number(a.createdAt) || 0));
+  try {
+    // 1. Get Auth Token
+    const user = firebase.auth().currentUser;
+    if (!user) throw new Error("You must be logged in.");
+    const token = await user.getIdToken();
 
+    // 2. Fetch from Secure API (Bypasses Database Rules)
+    const response = await fetch('/api/donations', {
+      method: 'GET',
+      headers: {
+        'Authorization': 'Bearer ' + token,
+        'Content-Type': 'application/json'
+      }
+    });
+
+    const data = await response.json();
+    if (data.status !== 'success') throw new Error(data.message || "API Error");
+
+    const donations = data.donations || [];
+
+    // 3. Render Table
     if (!donations.length) {
       tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:#94a3b8;">No donations yet.</td></tr>';
       return;
@@ -611,6 +628,7 @@ function loadDonations() {
       const date = d.createdAt ? new Date(d.createdAt).toLocaleString() : '-';
       const paymentId = d.paymentId || '-';
       const note = (d.donorNote || '-').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+      
       tr.innerHTML = `
         <td>${date}</td>
         <td><strong>${donorLabel}</strong>${emailLine}</td>
@@ -622,10 +640,18 @@ function loadDonations() {
       tbody.appendChild(tr);
     });
 
-    loadDonationStats();
-  }).catch((err) => {
+    // 4. Update Stats (If returned by API)
+    if (data.stats) {
+      const countEl = document.getElementById('donationCount');
+      const amountEl = document.getElementById('donationTotalAmount');
+      if (countEl) countEl.innerText = data.stats.count;
+      if (amountEl) amountEl.innerText = formatCurrencyINR(data.stats.totalAmount);
+    }
+
+  } catch (err) {
+    console.error(err);
     tbody.innerHTML = `<tr><td colspan="6" style="color:#ef4444; text-align:center;">Failed to load donations: ${err.message}</td></tr>`;
-  });
+  }
 }
 
 function exportDonationsCSV() {
