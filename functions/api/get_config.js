@@ -3,6 +3,7 @@ export async function onRequest(context) {
 
   // Only return safe, public keys to the browser
   const config = {
+    razorpayKeyId: env.RAZORPAY_KEY_ID, // <--- Added this line
     firebase: {
       apiKey: env.FIREBASE_API_KEY,
       authDomain: env.FIREBASE_AUTH_DOMAIN,
@@ -12,8 +13,7 @@ export async function onRequest(context) {
       messagingSenderId: env.FIREBASE_SENDER_ID,
       appId: env.FIREBASE_APP_ID
     },
-    // We send the admin email so the frontend knows who is admin, 
-    // but the actual protection happens on the server/database rules.
+    // We send the admin email so the frontend knows who is admin
     adminEmail: env.ADMIN_EMAIL 
   };
 

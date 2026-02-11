@@ -1,16 +1,14 @@
+// Verification helper
 async function verifyFirebaseIdToken(idToken, env) {
   if (!idToken) return null;
-
   const verifyUrl = `https://identitytoolkit.googleapis.com/v1/accounts:lookup?key=${env.FIREBASE_WEB_API_KEY}`;
   const verifyRes = await fetch(verifyUrl, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ idToken })
   });
-
   const verifyData = await verifyRes.json();
   if (!verifyRes.ok || !verifyData.users || verifyData.users.length === 0) return null;
-
   return verifyData.users[0];
 }
 
@@ -38,6 +36,7 @@ function sanitizeText(value, maxLen = 240) {
   return String(value).replace(/[<>]/g, '').trim().slice(0, maxLen);
 }
 
+// Maps incoming data to database schema
 function mapDonationRecord(input) {
   const amount = Number(input.amount || 0);
   const paymentId = sanitizeText(input.paymentId, 80);
@@ -63,12 +62,13 @@ function mapDonationRecord(input) {
     paymentId,
     orderId: sanitizeText(input.orderId || '', 80),
     signature: sanitizeText(input.signature || '', 180),
-    status: sanitizeText(input.status || 'captured_test', 40),
+    status: 'captured', // Marked as captured for record keeping
     source: sanitizeText(input.source || 'donate_page', 40),
     createdAt: Number(input.createdAt) || Date.now()
   };
 }
 
+// Saves using Server Secret (Bypassing User Rules)
 async function saveDonation(body, env) {
   const donation = mapDonationRecord(body);
   const saveUrl = `${env.FIREBASE_DB_URL}/donations/${donation.paymentId}.json?auth=${env.FIREBASE_DB_SECRET}`;
@@ -82,6 +82,7 @@ async function saveDonation(body, env) {
   return donation;
 }
 
+// Fetches list for Admin
 async function getDonations(env) {
   const listUrl = `${env.FIREBASE_DB_URL}/donations.json?auth=${env.FIREBASE_DB_SECRET}`;
   const res = await fetch(listUrl);
@@ -106,12 +107,14 @@ export async function onRequest(context) {
   }
 
   try {
+    // PUBLIC: Save Donation (Called by donate.html after Razorpay success)
     if (request.method === 'POST') {
       const body = await request.json();
       const saved = await saveDonation(body, env);
       return jsonResponse({ status: 'success', donation: saved }, 200);
     }
 
+    // PROTECTED: Get Donations (Called by Admin Panel)
     if (request.method === 'GET') {
       const authHeader = request.headers.get('Authorization') || '';
       const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : null;

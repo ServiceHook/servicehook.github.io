@@ -4,3 +4,4 @@ package-lock.json
 package.json
 .dev.vars
 .DS_Store
+.env.local

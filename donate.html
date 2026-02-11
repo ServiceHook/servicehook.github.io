@@ -11,6 +11,7 @@
   <link rel="stylesheet" href="/file/styles.css" />
 
   <style>
+    /* PRESERVING YOUR EXACT CSS */
     .donation-grid {
       display: grid;
       grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -135,7 +136,7 @@
       </div>
 
       <button id="payBtn" class="button" onclick="startDonation()">Donate with Razorpay</button>
-      <p class="note">Test mode enabled with Razorpay test key. Use Razorpay demo payment methods in checkout to simulate payment.</p>
+      <p class="note" id="modeNotice">Loading payment system...</p>
 
       <div id="successCard">
         <h3>🎉 Donation Received</h3>
@@ -148,23 +149,33 @@
 
   <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
   
   <script>
-    let donationDb = null;
+    let RAZORPAY_KEY_ID = null;
 
-    // 1. Initialize Firebase
-    async function initDonationStorage() {
+    // 1. Initialize & Fetch Config
+    async function initDonationSystem() {
       try {
         const response = await fetch('/api/get_config');
         const config = await response.json();
-        if (!firebase.apps.length) firebase.initializeApp(config.firebase);
-        donationDb = firebase.database();
+        
+        RAZORPAY_KEY_ID = config.razorpayKeyId;
+        
+        const notice = document.getElementById('modeNotice');
+        if (RAZORPAY_KEY_ID && RAZORPAY_KEY_ID.startsWith('rzp_test')) {
+            notice.innerText = "Test mode enabled. No real money will be deducted.";
+        } else if (RAZORPAY_KEY_ID) {
+            notice.innerText = "Secure Payment by Razorpay.";
+        } else {
+            notice.innerText = "Error: Payment system unavailable.";
+            document.getElementById('payBtn').disabled = true;
+        }
+
       } catch (error) {
-        console.error('Donation storage init failed', error);
+        console.error('Config load failed', error);
       }
     }
-    initDonationStorage();
+    initDonationSystem();
 
     // 2. UI Event Listeners
     const presetButtons = document.querySelectorAll('.amount-chip');
@@ -210,32 +221,38 @@
     }
 
     async function saveDonationToAdmin(form, response) {
-      if (!donationDb) return;
-
-      const donorName = form.anonymousMode ? 'Anonymous' : (form.donorName || 'Anonymous');
-      const donationRecord = {
+      // Send to secure API instead of direct Firebase Write
+      const payload = {
         amount: form.amountInInr,
-        amountInPaise: Math.round(form.amountInInr * 100),
-        currency: 'INR',
-        donorName,
+        donorName: form.anonymousMode ? 'Anonymous' : form.donorName,
         donorEmail: form.anonymousMode ? '' : form.donorEmail,
         donorPhone: form.anonymousMode ? '' : form.donorPhone,
         anonymous: form.anonymousMode,
         purpose: form.donationPurpose,
-        donorNote: form.donationNote || 'No note',
+        donorNote: form.donationNote,
         paymentId: response.razorpay_payment_id,
-        orderId: response.razorpay_order_id || '',
-        signature: response.razorpay_signature || '',
-        status: 'captured_test',
-        source: 'donate_page',
-        createdAt: Date.now()
+        orderId: response.razorpay_order_id,
+        signature: response.razorpay_signature,
+        source: 'donate_page'
       };
 
-      await donationDb.ref(`donations/${response.razorpay_payment_id}`).set(donationRecord);
+      await fetch('/api/donations', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+      });
     }
 
     // 4. Main Donation Logic
-    function startDonation() {
+    async function startDonation() {
+      if (!RAZORPAY_KEY_ID) {
+          await initDonationSystem();
+          if(!RAZORPAY_KEY_ID) {
+              alert("System Error: Could not load payment key. Please refresh.");
+              return;
+          }
+      }
+
       const payBtn = document.getElementById('payBtn');
       const form = readFormData();
 
@@ -257,12 +274,12 @@
       const amountInPaise = Math.round(form.amountInInr * 100);
 
       const options = {
-        key: 'rzp_test_SEVKPNh3Axs1we',
+        key: RAZORPAY_KEY_ID, // Uses variable from Env
         amount: amountInPaise,
         currency: 'INR',
         name: 'Jachu Services',
         description: `Donation - ${form.donationPurpose}`,
-        image: 'https://jachu.xyz/manifest-icon-512.maskable.png', // Corrected domain fallback
+        image: '/assets/logo.png', // Fallback to local or generic
         prefill: {
           name: form.anonymousMode ? '' : form.donorName,
           email: form.anonymousMode ? '' : form.donorEmail,

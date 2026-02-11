@@ -149,6 +149,17 @@
             <button onclick="exportDonationsCSV()" class="button" style="background:#0ea5e9;">⬇ Export CSV</button>
           </div>
         </div>
+        
+        <div class="filter-bar" style="display:flex; gap:10px; margin-bottom:15px; flex-wrap:wrap;">
+            <input type="text" id="donateSearch" placeholder="Search donor, email, note..." class="input" style="margin:0; flex:1; min-width:200px;" oninput="filterDonations()">
+            <select id="donatePurposeFilter" class="input" style="margin:0; width:150px;" onchange="filterDonations()">
+                <option value="">All Purposes</option>
+                <option value="General support">General support</option>
+                <option value="Server costs">Server costs</option>
+                <option value="Feature development">Feature development</option>
+            </select>
+            <input type="number" id="donateMinAmount" placeholder="Min ₹" class="input" style="margin:0; width:100px;" oninput="filterDonations()">
+        </div>
         <p style="color: var(--text-muted);">Shows successful donations from the Donate page (including note, purpose, and payment ID).</p>
         <div class="table-container">
           <table id="donationsTable">

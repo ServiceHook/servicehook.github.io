@@ -1,6 +1,7 @@
 // VERSION: SECURE_ENV_LOAD_V2
 let db;
 let ADMIN_EMAIL = ""; // Fetched dynamically
+let allDonations = []; // STORE DONATIONS FOR FILTERING
 
 // --- INITIALIZATION ---
 async function initAdminApp() {
@@ -82,7 +83,7 @@ function initAdminPanel() {
   document.getElementById("adminContent").style.display = "flex";
   switchSection('dashboard');
   loadDashboard();
-  loadDonationStats(); // UPDATED: Now uses API
+  loadDonationStats(); 
   checkPendingBills();
 }
 
@@ -100,7 +101,7 @@ function switchSection(id) {
   if(id === 'manage') loadLinks();
   if(id === 'ban') { loadBannedUsers(); loadBannedIps(); }
   if(id === 'billing') loadBilling();
-  if(id === 'donations') loadDonations(); // UPDATED: Now uses API
+  if(id === 'donations') loadDonations(); 
   if(id === 'users') loadApiUsers(); 
 }
 
@@ -593,7 +594,7 @@ function checkPendingBills() {
 }
 
 
-// --- SECURE DONATION LOADER (FIXED) ---
+// --- SECURE DONATION LOADER (UPDATED WITH FILTERS) ---
 async function loadDonations() {
   const tbody = document.querySelector('#donationsTable tbody');
   if (!tbody) return;
@@ -604,8 +605,6 @@ async function loadDonations() {
     // 1. Get Auth Token
     const user = firebase.auth().currentUser;
     if (!user) {
-         // If auth isn't ready yet, the observer in initAdminApp will eventually call this.
-         // But if we are here and not user, maybe we need to wait or return.
          tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">Authenticating...</td></tr>';
          return; 
     }
@@ -626,32 +625,9 @@ async function loadDonations() {
        throw new Error(data.message || "API Error");
     }
 
-    const donations = data.donations || [];
-
-    // 3. Render Table
-    if (!donations.length) {
-      tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:#94a3b8;">No donations yet.</td></tr>';
-    } else {
-        tbody.innerHTML = '';
-        donations.forEach((d) => {
-          const tr = document.createElement('tr');
-          const donorLabel = d.anonymous ? 'Anonymous' : (d.donorName || 'Unknown');
-          const emailLine = d.donorEmail ? `<div style="font-size:0.8rem; color:#94a3b8;">${d.donorEmail}</div>` : '';
-          const date = d.createdAt ? new Date(d.createdAt).toLocaleString() : '-';
-          const paymentId = d.paymentId || '-';
-          const note = (d.donorNote || '-').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-          
-          tr.innerHTML = `
-            <td>${date}</td>
-            <td><strong>${donorLabel}</strong>${emailLine}</td>
-            <td>${d.purpose || 'General support'}</td>
-            <td style="color:#4ade80; font-weight:600;">₹${d.amount || 0}</td>
-            <td style="font-family:monospace; color:#fbbf24;">${paymentId}</td>
-            <td style="max-width:280px; white-space:normal;">${note}</td>
-          `;
-          tbody.appendChild(tr);
-        });
-    }
+    // 3. STORE DATA GLOBALLY & RENDER
+    allDonations = data.donations || [];
+    filterDonations(); // This handles the rendering now
 
     // 4. Update Stats in case this is called directly
     if (data.stats) {
@@ -665,6 +641,54 @@ async function loadDonations() {
     console.error(err);
     tbody.innerHTML = `<tr><td colspan="6" style="color:#ef4444; text-align:center;">Failed to load donations: ${err.message}</td></tr>`;
   }
+}
+
+function filterDonations() {
+    const searchText = document.getElementById('donateSearch').value.toLowerCase();
+    const purposeFilter = document.getElementById('donatePurposeFilter').value;
+    const minAmount = parseFloat(document.getElementById('donateMinAmount').value) || 0;
+
+    const filtered = allDonations.filter(d => {
+        const dName = (d.donorName || "").toLowerCase();
+        const dEmail = (d.donorEmail || "").toLowerCase();
+        const dNote = (d.donorNote || "").toLowerCase();
+        const matchesSearch = dName.includes(searchText) || dEmail.includes(searchText) || dNote.includes(searchText);
+        
+        const matchesPurpose = purposeFilter === "" || d.purpose === purposeFilter;
+        const matchesAmount = (d.amount || 0) >= minAmount;
+
+        return matchesSearch && matchesPurpose && matchesAmount;
+    });
+
+    renderDonations(filtered);
+}
+
+function renderDonations(list) {
+    const tbody = document.querySelector('#donationsTable tbody');
+    if (!list.length) {
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:#94a3b8;">No donations found.</td></tr>';
+        return;
+    }
+
+    tbody.innerHTML = '';
+    list.forEach((d) => {
+        const tr = document.createElement('tr');
+        const donorLabel = d.anonymous ? 'Anonymous' : (d.donorName || 'Unknown');
+        const emailLine = d.donorEmail ? `<div style="font-size:0.8rem; color:#94a3b8;">${d.donorEmail}</div>` : '';
+        const date = d.createdAt ? new Date(d.createdAt).toLocaleString() : '-';
+        const paymentId = d.paymentId || '-';
+        const note = (d.donorNote || '-').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        
+        tr.innerHTML = `
+        <td>${date}</td>
+        <td><strong>${donorLabel}</strong>${emailLine}</td>
+        <td>${d.purpose || 'General support'}</td>
+        <td style="color:#4ade80; font-weight:600;">₹${d.amount || 0}</td>
+        <td style="font-family:monospace; color:#fbbf24;">${paymentId}</td>
+        <td style="max-width:280px; white-space:normal;">${note}</td>
+        `;
+        tbody.appendChild(tr);
+    });
 }
 
 function exportDonationsCSV() {
