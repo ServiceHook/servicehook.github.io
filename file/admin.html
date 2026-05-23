@@ -38,7 +38,9 @@
         <li onclick="switchSection('billing')" id="nav-billing">💰 Billing <span id="billBadge" style="background:red; color:white; font-size:0.7rem; padding:2px 5px; border-radius:10px; display:none;">!</span></li>
         <li onclick="switchSection('donations')" id="nav-donations">💜 Donations</li>
         <li onclick="switchSection('ban')" id="nav-ban">🚫 Banned Users</li>
+        <li onclick="switchSection('tickets')" id="nav-tickets">🎫 Support Tickets</li>
         <li onclick="logout()" style="margin-top: auto; color: #ef4444;">🚪 Logout</li>
+        
       </ul>
     </div>
 
@@ -195,6 +197,28 @@
           </div>
         </div>
       </div>
+
+      <div id="tickets" class="section hidden">
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+    <h2>🎫 Support Tickets</h2>
+    <button onclick="loadTickets()" class="button">🔄 Refresh</button>
+  </div>
+  <div class="table-container">
+    <table id="ticketsTable">
+      <thead>
+        <tr>
+          <th>Date</th>
+          <th>User Details</th>
+          <th>Category / Priority</th>
+          <th>Description</th>
+          <th>Status</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody><tr><td colspan="6">Loading tickets...</td></tr></tbody>
+    </table>
+  </div>
+</div>
 
     </div>
   </div>

@@ -103,6 +103,7 @@ function switchSection(id) {
   if(id === 'billing') loadBilling();
   if(id === 'donations') loadDonations(); 
   if(id === 'users') loadApiUsers(); 
+  if(id === 'tickets') loadTickets();
 }
 
 // --- DASHBOARD & CHARTS ---
@@ -723,4 +724,85 @@ function exportDonationsCSV() {
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
+}
+
+
+// --- SUPPORT TICKETS LOGIC ---
+function loadTickets() {
+  const tbody = document.querySelector("#ticketsTable tbody");
+  if(!tbody) return;
+  tbody.innerHTML = "<tr><td colspan='6' style='text-align:center;'>Fetching tickets...</td></tr>";
+
+  db.ref("tickets").once("value").then(snap => {
+    tbody.innerHTML = "";
+    if (!snap.exists()) {
+      tbody.innerHTML = "<tr><td colspan='6' style='text-align:center; color: var(--text-muted);'>No tickets found.</td></tr>";
+      return;
+    }
+
+    const tickets = [];
+    snap.forEach(child => {
+      tickets.push({ id: child.key, ...child.val() });
+    });
+    
+    // Sort by newest first
+    tickets.sort((a, b) => b.createdAt - a.createdAt);
+
+    tickets.forEach(t => {
+      const tr = document.createElement("tr");
+      const date = new Date(t.createdAt).toLocaleString();
+      const statusColor = t.status === "Closed" ? "#94a3b8" : "#4ade80";
+      
+      // Color code priority
+      let priorityColor = "#3b82f6"; // Low (Blue)
+      if (t.priority === "High") priorityColor = "#ef4444"; // Red
+      if (t.priority === "Medium") priorityColor = "#f59e0b"; // Orange
+      
+      tr.innerHTML = `
+        <td style="font-size: 0.85rem; color: var(--text-muted);">${date}</td>
+        <td>
+          <strong>${t.name}</strong><br>
+          <span style="font-size: 0.85rem; color: var(--text-muted);">${t.email}</span>
+        </td>
+        <td>
+          <div style="margin-bottom:4px; font-weight: 500;">${t.category}</div>
+          <span style="font-size: 0.75rem; padding: 2px 6px; border-radius: 4px; background: rgba(255,255,255,0.05); color: ${priorityColor}; border: 1px solid ${priorityColor};">${t.priority}</span>
+        </td>
+        <td style="max-width: 250px; white-space: normal; font-size: 0.9rem;">
+          ${(t.description || "").replace(/</g, "&lt;")}
+        </td>
+        <td style="color: ${statusColor}; font-weight: bold;">${t.status}</td>
+        <td>
+          <div class="action-group">
+            ${t.status !== "Closed" 
+              ? `<button onclick="closeTicket('${t.id}')" class="button btn-sm" style="background: #22c55e;">Resolve</button>` 
+              : `<button onclick="deleteTicket('${t.id}')" class="button btn-sm btn-danger">Delete</button>`}
+          </div>
+        </td>
+      `;
+      tbody.appendChild(tr);
+    });
+  });
+}
+
+function closeTicket(id) {
+  if (confirm("Mark this ticket as resolved/closed?")) {
+    db.ref("tickets/" + id).update({ status: "Closed" })
+      .then(() => {
+        showToast("Ticket closed", "success");
+        loadTickets();
+      })
+      .catch(err => showToast(err.message, "error"));
+  }
+}
+
+function deleteTicket(id) {
+  if (confirm("Permanently delete this ticket record?")) {
+    db.ref("tickets/" + id).remove()
+      .then(() => {
+        showToast("Ticket deleted", "success");
+        loadTickets();
+      })
+      .catch(err => showToast(err.message, "error"));
+  }
 }

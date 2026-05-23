@@ -110,7 +110,8 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
          <a href="/legal.html" style="color: inherit; margin: 0 10px;">Privacy Policy</a> • 
          <a href="/legal.html" style="color: inherit; margin: 0 10px;">Terms</a> • 
          <a href="/api/dashboard.html" style="color: inherit; margin: 0 10px;">API</a> • 
-         <a href="/donate.html" style="color: inherit; margin: 0 10px;">Donate</a>
+         <a href="/donate.html" style="color: inherit; margin: 0 10px;">Donate</a> •
+         <a href="#" onclick="toggleTicketModal(event)" style="color: inherit; margin: 0 10px;">Raise a Ticket</a>
      </p>
      <p>&copy; 2026 Jachu. All rights reserved.</p>
   </footer>
@@ -160,5 +161,42 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
   </script>
 
   <script src='https://cdn.jotfor.ms/agent/embedjs/0197fa7374c97c9fade854e7f577b1bedcde/embed.js'></script>
+  <div id="ticketModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.8); backdrop-filter: blur(5px); z-index:9999; justify-content:center; align-items:center;">
+    <div class="shortener-box" style="width: 90%; max-width: 450px; text-align: left;">
+      <h2 style="margin-top:0; margin-bottom: 20px; color: white; text-align: center;">Submit a Request</h2>
+      
+      <div class="input-group">
+          <input id="ticketName" placeholder="Your Name" class="input" type="text" />
+      </div>
+      <div class="input-group">
+          <input id="ticketEmail" placeholder="Email Address" class="input" type="email" />
+      </div>
+      <div class="input-group" style="display: flex; gap: 10px;">
+          <select id="ticketCategory" class="input" style="flex: 1; margin-bottom: 0;">
+              <option value="" disabled selected>Select Category</option>
+              <option value="Fraud">Fraud</option>
+              <option value="General">General</option>
+              <option value="Request">Request</option>
+              <option value="Suggestion">Suggestion</option>
+              <option value="Other">Other</option>
+          </select>
+          <select id="ticketPriority" class="input" style="flex: 1; margin-bottom: 0;">
+              <option value="" disabled selected>Priority</option>
+              <option value="Low">Low</option>
+              <option value="Medium">Medium</option>
+              <option value="High">High</option>
+          </select>
+      </div>
+      <div class="input-group" style="margin-top: 15px;">
+          <textarea id="ticketDesc" placeholder="Describe your issue or suggestion..." class="input" rows="4" style="resize: vertical;"></textarea>
+      </div>
+      
+      <button class="button" id="submitTicketBtn" onclick="submitTicket()" style="margin-bottom: 10px;">Submit Ticket</button>
+      
+      <div style="margin-top: 10px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 15px; text-align: center;">
+        <button onclick="toggleTicketModal(event)" style="background: none; border: none; color: #ef4444; cursor: pointer;">Cancel</button>
+      </div>
+    </div>
+  </div>
 </body>
 </html>

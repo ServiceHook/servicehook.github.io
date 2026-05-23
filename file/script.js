@@ -584,3 +584,64 @@ function updateUserLink(oldAlias) {
     }
   });
 }
+
+
+// --- SUPPORT TICKET LOGIC ---
+function toggleTicketModal(e) {
+  if (e) e.preventDefault();
+  const modal = document.getElementById("ticketModal");
+  if(modal) {
+     modal.style.display = modal.style.display === "flex" ? "none" : "flex";
+     // Auto-fill email if user is logged in
+     if(currentUser && modal.style.display === "flex") {
+         document.getElementById("ticketEmail").value = currentUser.email;
+     }
+  }
+}
+
+function submitTicket() {
+  if (!db) return showToast("System initializing...", "neutral");
+  
+  const name = document.getElementById("ticketName").value.trim();
+  const email = document.getElementById("ticketEmail").value.trim();
+  const category = document.getElementById("ticketCategory").value;
+  const priority = document.getElementById("ticketPriority").value;
+  const desc = document.getElementById("ticketDesc").value.trim();
+  const btn = document.getElementById("submitTicketBtn");
+
+  if (!name || !email || !category || !priority || !desc) {
+      return showToast("Please fill all fields", "error");
+  }
+
+  btn.innerText = "Submitting...";
+  btn.disabled = true;
+
+  const ticketData = {
+      name: name,
+      email: email,
+      category: category,
+      priority: priority,
+      description: desc,
+      status: "Open",
+      createdAt: Date.now(),
+      userId: currentUser ? currentUser.uid : "guest"
+  };
+
+  db.ref("tickets").push(ticketData)
+    .then(() => {
+        showToast("Ticket submitted successfully!", "success");
+        toggleTicketModal();
+        // Clear fields
+        document.getElementById("ticketName").value = "";
+        document.getElementById("ticketDesc").value = "";
+        document.getElementById("ticketCategory").value = "";
+        document.getElementById("ticketPriority").value = "";
+    })
+    .catch(err => {
+        showToast("Error: " + err.message, "error");
+    })
+    .finally(() => {
+        btn.innerText = "Submit Ticket";
+        btn.disabled = false;
+    });
+}
