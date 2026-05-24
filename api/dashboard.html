@@ -6,6 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/file/styles.css" />
+    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
 
     <style>
         body { padding-top: 80px; align-items: flex-start; }
@@ -67,19 +68,11 @@
         }
         @keyframes popIn { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
         
-        .pay-tabs { display: flex; gap: 10px; margin-bottom: 20px; background: rgba(0,0,0,0.2); padding: 5px; border-radius: 10px; }
-        .pay-tab { flex: 1; padding: 10px; background: transparent; border: none; color: var(--text-muted); cursor: pointer; border-radius: 8px; font-weight: 500; transition: 0.2s; }
-        .pay-tab.active { background: var(--primary-accent); color: white; shadow: 0 2px 5px rgba(0,0,0,0.2); }
-
-        .qr-frame { background: white; padding: 15px; border-radius: 12px; display: inline-block; margin-bottom: 15px; }
-        .qr-img { width: 180px; height: 180px; display: block; }
-        
-        .upi-box { 
-            background: rgba(255,255,255,0.05); border: 1px solid var(--border-color);
-            padding: 15px; border-radius: 12px; margin-bottom: 20px; display: flex; 
-            justify-content: space-between; align-items: center;
+        .coupon-box {
+            display: flex; gap: 10px; margin-top: 15px; margin-bottom: 20px;
+            background: rgba(255,255,255,0.05); padding: 15px; border-radius: 12px;
         }
-        .upi-text { font-family: monospace; font-size: 1.1rem; color: #4ade80; }
+        .coupon-box input { flex: 1; margin: 0; }
 
         @media (max-width: 768px) { .dash-container { grid-template-columns: 1fr; } }
     </style>
@@ -97,41 +90,19 @@
         <div class="modal-content">
             <button onclick="closeModal()" style="position:absolute; top:15px; right:15px; background:none; border:none; color:white; font-size:1.2rem; cursor:pointer;">✕</button>
             
-            <h2 style="justify-content:center; margin-bottom: 5px;">Make Payment</h2>
-            <p id="payDetailText" style="color:var(--text-muted); font-size:0.9rem; margin-top:0; margin-bottom: 20px;"></p>
-
-            <div class="pay-tabs">
-                <button onclick="switchTab('qr')" id="tab-qr" class="pay-tab active">Scan QR (Recommended)</button>
-                <button onclick="switchTab('upi')" id="tab-upi" class="pay-tab">UPI ID</button>
-            </div>
-
-            <div id="view-qr">
-                <div class="qr-frame">
-                    <img id="upiQrDisplay" class="qr-img" src="" alt="Generating QR..." />
-                </div>
-                <p style="font-size:0.8rem; color:#f70303; margin-bottom: 15px;">
-                    Open Googlepay, Phonepe, Bhim, Or Any Other Upi App To Scan And Pay
-                </p>    
-                <p style="font-size:0.8rem; color:#6366f1; margin-bottom: 15px;">
-                    Note: Amount & Email are pre-filled!
-                </p>
-            </div>
-
-            <div id="view-upi" style="display: none;">
-                <div class="upi-box">
-                    <span id="upiIdText" class="upi-text">jachu.xyz@axl</span>
-                    <button onclick="copyUpi()" class="button" style="width: auto; padding: 6px 12px; font-size: 0.8rem;">Copy</button>
-                </div>
-                <p style="font-size:0.8rem; color:#94a3b8; margin-bottom: 15px;">
-                    Open any UPI app (GPay, PhonePe) and pay to this ID.
-                </p>
-            </div>
+            <h2 style="justify-content:center; margin-bottom: 5px;">Upgrade Plan</h2>
+            <p id="payDetailText" style="color:var(--text-muted); font-size:0.9rem; margin-top:0; margin-bottom: 10px;"></p>
             
-            <div style="text-align: left; margin-top: 10px; padding-top: 15px; border-top: 1px solid var(--border-color);">
-                <label style="font-size:0.8rem; color:var(--text-muted); margin-bottom: 5px; display:block;">Transaction ID / UTR (Required):</label>
-                <input type="text" id="modalTxnId" class="input" placeholder="e.g. 321456789012" style="margin-bottom:10px;" />
-                <button onclick="submitModalPayment()" id="modalPayBtn" class="button">✅ Payment Complete</button>
+            <div style="font-size: 2rem; font-weight: bold; color: #4ade80; margin-bottom: 15px;" id="finalPriceDisplay">₹0</div>
+
+            <div class="coupon-box">
+                <input type="text" id="couponInput" class="input" placeholder="Have a coupon code?" style="text-transform: uppercase;" />
+                <button onclick="applyCoupon()" class="button" style="width: auto; padding: 10px;">Apply</button>
             </div>
+            <p id="couponMsg" style="font-size: 0.85rem; margin-top: -10px; margin-bottom: 15px; display: none;"></p>
+
+            <button onclick="startPayment()" id="modalPayBtn" class="button" style="font-size: 1.1rem;">💳 Pay with Razorpay</button>
+            <p style="font-size:0.75rem; color:#64748b; margin-top: 15px;">Instant activation upon successful payment.</p>
         </div>
     </div>
 
@@ -274,18 +245,19 @@ print(response.json())</code></pre>
         let currentUser = null;
         let currentKey = "";
         let selectedPlan = null;
-        const MY_UPI_ID = "jachu.xyz@axl"; 
+        let finalPrice = 0;
+        let appliedCoupon = "";
+        let RAZORPAY_KEY_ID = null;
 
-        // --- SECURE INIT START ---
         async function initDashboard() {
             try {
                 const response = await fetch('/api/get_config');
                 const config = await response.json();
                 
+                RAZORPAY_KEY_ID = config.razorpayKeyId;
                 firebase.initializeApp(config.firebase);
                 const auth = firebase.auth();
-                const db = firebase.database();
-                window.db = db; // Make db accessible globally for other functions
+                window.db = firebase.database();
 
                 auth.onAuthStateChanged(user => {
                     if (user) {
@@ -297,14 +269,12 @@ print(response.json())</code></pre>
                         document.getElementById('auth-check').style.display = 'flex';
                     }
                 });
-
             } catch (e) {
                 alert("Error loading configuration. Please refresh.");
                 console.error(e);
             }
         }
         initDashboard();
-        // --- SECURE INIT END ---
 
         // 1. KEY LOGIC
         async function generateKey(forceNew) {
@@ -339,48 +309,20 @@ print(response.json())</code></pre>
             document.getElementById('planBadge').innerText = limit > 50 ? "PRO Plan" : "Free Plan";
         }
 
-        // 2. PAYMENT & MODAL LOGIC (DUAL METHOD)
+        // 2. PAYMENT & MODAL LOGIC (Razorpay & Coupon)
         function openPaymentModal(price, limit, name) {
             selectedPlan = { price, limit, name };
+            finalPrice = price;
+            appliedCoupon = "";
             
-            // UI Updates
-            document.getElementById('payDetailText').innerText = `Plan: ${name} (+${limit} Links) for ₹${price}`;
-            document.getElementById('modalTxnId').value = ""; 
+            // Reset UI
+            document.getElementById('couponInput').value = "";
+            document.getElementById('couponMsg').style.display = "none";
+            document.getElementById('modalPayBtn').innerText = "💳 Pay with Razorpay";
+            document.getElementById('payDetailText').innerText = `Plan: ${name} (+${limit} Links)`;
+            document.getElementById('finalPriceDisplay').innerText = `₹${finalPrice}`;
             
-            // 1. Generate QR (Auto)
-            const upiName = "Jachu Services";
-            const userNote = currentUser.email; 
-            const noteSafe = userNote.length > 50 ? userNote.substring(0,47)+"..." : userNote;
-            const upiLink = `upi://pay?pa=${MY_UPI_ID}&pn=${encodeURIComponent(upiName)}&am=${price}&tn=${encodeURIComponent(noteSafe)}`;
-            const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(upiLink)}`;
-            
-            document.getElementById('upiQrDisplay').src = qrUrl;
-
-            // 2. Set UPI ID Text
-            document.getElementById('upiIdText').innerText = MY_UPI_ID;
-            
-            // Reset Tabs
-            switchTab('qr');
             document.getElementById('paymentModal').style.display = 'flex';
-        }
-
-        function switchTab(tab) {
-            // UI Toggle
-            document.getElementById('tab-qr').classList.toggle('active', tab === 'qr');
-            document.getElementById('tab-upi').classList.toggle('active', tab === 'upi');
-            
-            // Content Toggle
-            document.getElementById('view-qr').style.display = tab === 'qr' ? 'block' : 'none';
-            document.getElementById('view-upi').style.display = tab === 'upi' ? 'block' : 'none';
-        }
-
-        function copyUpi() {
-            navigator.clipboard.writeText(MY_UPI_ID).then(() => {
-                const btn = document.querySelector('#view-upi button');
-                const originalText = btn.innerText;
-                btn.innerText = "Copied!";
-                setTimeout(() => btn.innerText = originalText, 2000);
-            });
         }
 
         function closeModal() {
@@ -406,30 +348,128 @@ print(response.json())</code></pre>
             openPaymentModal(calc.price, calc.limit, "Custom Pack");
         }
 
-        function submitModalPayment() {
-            const txnId = document.getElementById('modalTxnId').value.trim();
-            const btn = document.getElementById('modalPayBtn');
+        async function applyCoupon() {
+            const code = document.getElementById('couponInput').value.trim().toUpperCase();
+            const msgEl = document.getElementById('couponMsg');
             
-            if(!txnId) {
-                if(!confirm("No Transaction ID entered. Admin verification may fail. Continue?")) return;
+            if (!code) return;
+
+            try {
+                const snap = await window.db.ref('coupons/' + code).once('value');
+                if (!snap.exists()) {
+                    msgEl.style.display = 'block';
+                    msgEl.style.color = '#ef4444';
+                    msgEl.innerText = "❌ Invalid Coupon Code";
+                    return;
+                }
+                
+                const coupon = snap.val();
+                if (!coupon.active) {
+                    msgEl.style.display = 'block';
+                    msgEl.style.color = '#ef4444';
+                    msgEl.innerText = "❌ Coupon Expired or Inactive";
+                    return;
+                }
+
+                appliedCoupon = code;
+                let discountAmt = (selectedPlan.price * (coupon.discountPercent / 100));
+                finalPrice = Math.max(0, Math.floor(selectedPlan.price - discountAmt));
+                
+                document.getElementById('finalPriceDisplay').innerText = `₹${finalPrice}`;
+                msgEl.style.display = 'block';
+                msgEl.style.color = '#4ade80';
+                msgEl.innerText = `✅ Coupon Applied: ${coupon.discountPercent}% OFF`;
+                
+                if (finalPrice === 0) {
+                    document.getElementById('modalPayBtn').innerText = "✨ Activate Free";
+                } else {
+                    document.getElementById('modalPayBtn').innerText = `💳 Pay ₹${finalPrice} with Razorpay`;
+                }
+
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        async function applyInstantUpgrade(addedLimit, amountPaid, txnId, couponUsed) {
+            try {
+                // Find user's api key mapping
+                const userSnap = await window.db.ref(`users/${currentUser.uid}/api_key`).once("value");
+                const apiKey = userSnap.val();
+                
+                if (!apiKey) {
+                    alert("Error: You haven't generated an API key yet. Please click 'Sync Key' first.");
+                    return;
+                }
+                
+                const keyRef = window.db.ref(`api_keys/${apiKey}`);
+                const keySnap = await keyRef.once("value");
+                const currentData = keySnap.val() || {};
+                const currentLimit = parseInt(currentData.limit) || 0;
+                const newTotal = currentLimit + addedLimit;
+
+                // Update Key Limit
+                await keyRef.update({ limit: newTotal });
+
+                // Log to Billing/Transactions for Admin
+                await window.db.ref('payment_requests').push({
+                    userId: currentUser.uid,
+                    userEmail: currentUser.email,
+                    txnId: txnId || "Instant_Coupon",
+                    planName: selectedPlan.name,
+                    requestedLimit: addedLimit,
+                    amount: amountPaid,
+                    coupon: couponUsed || "None",
+                    status: "Completed",
+                    timestamp: Date.now()
+                });
+
+                alert(`Success! Your limit has been upgraded by +${addedLimit} links!`);
+                closeModal();
+                generateKey(false); // Refresh UI Limit Counter
+
+            } catch(e) {
+                console.error(e);
+                alert("Error applying upgrade: " + e.message);
+            }
+        }
+
+        function startPayment() {
+            if (finalPrice === 0) {
+                // 100% Coupon Used - Instant Activate
+                document.getElementById('modalPayBtn').innerText = "Activating...";
+                applyInstantUpgrade(selectedPlan.limit, 0, `COUPON_${appliedCoupon}`, appliedCoupon);
+                return;
             }
 
-            btn.innerText = "Submitting..."; btn.disabled = true;
+            if (!RAZORPAY_KEY_ID) {
+                alert("System Error: Razorpay not configured.");
+                return;
+            }
 
-            // Use the global window.db variable
-            window.db.ref('payment_requests').push({
-                userId: currentUser.uid,
-                userEmail: currentUser.email,
-                txnId: txnId || "No ID - Check Note: " + currentUser.email,
-                planName: selectedPlan.name,
-                requestedLimit: selectedPlan.limit,
-                amount: selectedPlan.price,
-                timestamp: Date.now()
-            }).then(() => {
-                alert("Payment Submitted! Admin will verify and approve shortly.");
-                closeModal();
-                btn.innerText = "✅ Payment Complete"; btn.disabled = false;
+            const amountInPaise = finalPrice * 100;
+            const options = {
+                key: RAZORPAY_KEY_ID,
+                amount: amountInPaise,
+                currency: "INR",
+                name: "Jachu Services",
+                description: `Upgrade Plan: ${selectedPlan.name}`,
+                prefill: {
+                    email: currentUser.email,
+                },
+                theme: { color: "#6366f1" },
+                handler: async function(response) {
+                    // Success callback
+                    document.getElementById('modalPayBtn').innerText = "Processing Upgrade...";
+                    await applyInstantUpgrade(selectedPlan.limit, finalPrice, response.razorpay_payment_id, appliedCoupon);
+                }
+            };
+            
+            const rzp = new Razorpay(options);
+            rzp.on('payment.failed', function (response){
+                 alert("Payment Failed: " + response.error.description);
             });
+            rzp.open();
         }
 
         // 3. API LINKS TABLE

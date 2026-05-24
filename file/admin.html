@@ -12,7 +12,6 @@
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
-
   <script src="https://cdn.jsdelivr.net/npm/chart.js/dist/chart.umd.min.js"></script>
 </head>
 <body>
@@ -35,12 +34,12 @@
         <li onclick="switchSection('dashboard')" id="nav-dashboard" class="active">📊 Dashboard</li>
         <li onclick="switchSection('manage')" id="nav-manage">🔗 Manage Links</li>
         <li onclick="switchSection('users')" id="nav-users">👥 API Users</li>
-        <li onclick="switchSection('billing')" id="nav-billing">💰 Billing <span id="billBadge" style="background:red; color:white; font-size:0.7rem; padding:2px 5px; border-radius:10px; display:none;">!</span></li>
+        <li onclick="switchSection('billing')" id="nav-billing">💰 Billing/Transactions</li>
+        <li onclick="switchSection('coupons')" id="nav-coupons">🎟️ Coupons</li>
         <li onclick="switchSection('donations')" id="nav-donations">💜 Donations</li>
         <li onclick="switchSection('ban')" id="nav-ban">🚫 Banned Users</li>
         <li onclick="switchSection('tickets')" id="nav-tickets">🎫 Support Tickets</li>
         <li onclick="logout()" style="margin-top: auto; color: #ef4444;">🚪 Logout</li>
-        
       </ul>
     </div>
 
@@ -49,22 +48,10 @@
       <div id="dashboard" class="section">
         <h2 style="margin-bottom: 20px;">Overview</h2>
         <div class="stats-grid">
-          <div class="stat-card">
-            <h3>Total Links</h3>
-            <p id="totalCount">0</p>
-          </div>
-          <div class="stat-card">
-            <h3>Created Today</h3>
-            <p id="todayCount" style="color: #4ade80;">0</p>
-          </div>
-          <div class="stat-card">
-            <h3>Total Donations</h3>
-            <p id="donationCount" style="color: #f472b6;">0</p>
-          </div>
-          <div class="stat-card">
-            <h3>Donation Amount</h3>
-            <p id="donationTotalAmount" style="color: #22d3ee;">₹0</p>
-          </div>
+          <div class="stat-card"><h3>Total Links</h3><p id="totalCount">0</p></div>
+          <div class="stat-card"><h3>Created Today</h3><p id="todayCount" style="color: #4ade80;">0</p></div>
+          <div class="stat-card"><h3>Total Donations</h3><p id="donationCount" style="color: #f472b6;">0</p></div>
+          <div class="stat-card"><h3>Donation Amount</h3><p id="donationTotalAmount" style="color: #22d3ee;">₹0</p></div>
         </div>
         <div class="stat-card" style="margin-bottom: 30px; border: 1px solid var(--border-color); padding: 20px;">
           <h3 style="margin-bottom: 15px;">📈 Growth (Last 7 Days)</h3>
@@ -86,12 +73,7 @@
         </div>
         <table id="urlTable">
           <thead>
-            <tr>
-              <th width="150">Alias</th>
-              <th>Target URL</th>
-              <th width="80">Clicks</th>
-              <th width="120">Actions</th>
-            </tr>
+            <tr><th width="150">Alias</th><th>Target URL</th><th width="80">Clicks</th><th width="120">Actions</th></tr>
           </thead>
           <tbody></tbody>
         </table>
@@ -107,18 +89,11 @@
           <h2>API User Database</h2>
           <button onclick="loadApiUsers()" class="button">🔄 Refresh List</button>
         </div>
-        <p style="color: var(--text-muted); margin-bottom: 15px;">
-           Manage usage limits. <span style="color:#4ade80;">Green rows</span> indicate paid/upgraded users.
-        </p>
+        <p style="color: var(--text-muted); margin-bottom: 15px;">Manage usage limits. <span style="color:#4ade80;">Green rows</span> indicate paid/upgraded users.</p>
         <div class="table-container">
             <table id="apiUserTable">
               <thead>
-                <tr>
-                  <th>User Identity (UID & Email)</th>
-                  <th>Usage / Limit</th>
-                  <th>Status</th>
-                  <th>Actions</th>
-                </tr>
+                <tr><th>User Identity (UID & Email)</th><th>Usage / Limit</th><th>Status</th><th>Actions</th></tr>
               </thead>
               <tbody><tr><td colspan="4">Loading users...</td></tr></tbody>
             </table>
@@ -126,22 +101,46 @@
       </div>
 
       <div id="billing" class="section hidden">
-        <h2>💰 Payment Requests</h2>
-        <p style="color: var(--text-muted);">Approve Plan Upgrades here.</p>
-        <table id="billingTable">
-            <thead>
-                <tr>
-                    <th>User</th>
-                    <th>Plan</th>
-                    <th>Txn ID</th>
-                    <th>Amount</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-            <tbody></tbody>
-        </table>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <h2>💰 Plan Upgrades & Transactions</h2>
+            <button onclick="loadBilling()" class="button">🔄 Refresh</button>
+        </div>
+        <p style="color: var(--text-muted);">View Razorpay transactions, issue refunds, revoke limits, or manage abuse.</p>
+        <div class="table-container">
+            <table id="billingTable">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>User</th>
+                        <th>Plan & Limit</th>
+                        <th>Txn / Coupon</th>
+                        <th>Amount</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
       </div>
 
+      <div id="coupons" class="section hidden">
+          <h2>🎟️ Manage Discount Coupons</h2>
+          <div class="shortener-box" style="margin-bottom: 20px; padding: 20px;">
+              <h3 style="margin-top:0;">Create New Coupon</h3>
+              <div style="display: flex; gap: 10px; align-items: flex-start;">
+                  <input type="text" id="newCouponCode" placeholder="Code (e.g. SUMMER100)" class="input" style="flex: 2; text-transform: uppercase;">
+                  <input type="number" id="newCouponDiscount" placeholder="Discount % (e.g. 100)" class="input" style="flex: 1;" max="100" min="1">
+                  <button onclick="addCoupon()" class="button" style="flex: 1;">Create</button>
+              </div>
+          </div>
+          <div class="table-container">
+              <table id="couponsTable">
+                  <thead><tr><th>Coupon Code</th><th>Discount %</th><th>Status</th><th>Actions</th></tr></thead>
+                  <tbody></tbody>
+              </table>
+          </div>
+      </div>
 
       <div id="donations" class="section hidden">
         <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; margin-bottom:12px;">
@@ -151,31 +150,12 @@
             <button onclick="exportDonationsCSV()" class="button" style="background:#0ea5e9;">⬇ Export CSV</button>
           </div>
         </div>
-        
-        <div class="filter-bar" style="display:flex; gap:10px; margin-bottom:15px; flex-wrap:wrap;">
-            <input type="text" id="donateSearch" placeholder="Search donor, email, note..." class="input" style="margin:0; flex:1; min-width:200px;" oninput="filterDonations()">
-            <select id="donatePurposeFilter" class="input" style="margin:0; width:150px;" onchange="filterDonations()">
-                <option value="">All Purposes</option>
-                <option value="General support">General support</option>
-                <option value="Server costs">Server costs</option>
-                <option value="Feature development">Feature development</option>
-            </select>
-            <input type="number" id="donateMinAmount" placeholder="Min ₹" class="input" style="margin:0; width:100px;" oninput="filterDonations()">
-        </div>
-        <p style="color: var(--text-muted);">Shows successful donations from the Donate page (including note, purpose, and payment ID).</p>
         <div class="table-container">
           <table id="donationsTable">
             <thead>
-              <tr>
-                <th>Date</th>
-                <th>Donor</th>
-                <th>Purpose</th>
-                <th>Amount</th>
-                <th>Payment ID</th>
-                <th>Note</th>
-              </tr>
+              <tr><th>Date</th><th>Donor</th><th>Purpose</th><th>Amount</th><th>Payment ID</th><th>Note</th></tr>
             </thead>
-            <tbody><tr><td colspan="6">No donation data loaded.</td></tr></tbody>
+            <tbody><tr><td colspan="6">Loading...</td></tr></tbody>
           </table>
         </div>
       </div>
@@ -199,26 +179,19 @@
       </div>
 
       <div id="tickets" class="section hidden">
-  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-    <h2>🎫 Support Tickets</h2>
-    <button onclick="loadTickets()" class="button">🔄 Refresh</button>
-  </div>
-  <div class="table-container">
-    <table id="ticketsTable">
-      <thead>
-        <tr>
-          <th>Date</th>
-          <th>User Details</th>
-          <th>Category / Priority</th>
-          <th>Description</th>
-          <th>Status</th>
-          <th>Actions</th>
-        </tr>
-      </thead>
-      <tbody><tr><td colspan="6">Loading tickets...</td></tr></tbody>
-    </table>
-  </div>
-</div>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+          <h2>🎫 Support Tickets</h2>
+          <button onclick="loadTickets()" class="button">🔄 Refresh</button>
+        </div>
+        <div class="table-container">
+          <table id="ticketsTable">
+            <thead>
+              <tr><th>Date</th><th>User Details</th><th>Category / Priority</th><th>Description</th><th>Status</th><th>Actions</th></tr>
+            </thead>
+            <tbody><tr><td colspan="6">Loading tickets...</td></tr></tbody>
+          </table>
+        </div>
+      </div>
 
     </div>
   </div>
